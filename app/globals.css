@@ -559,7 +559,6 @@ img {
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow-soft);
-  overflow: hidden;
 }
 
 .activity-strip-label {
@@ -577,17 +576,16 @@ img {
 
 .activity-marquee {
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(260px, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-  overflow: hidden;
 }
 
 .activity-pill {
   position: relative;
   padding: 16px 18px;
   border-radius: 22px;
-  min-height: 124px;
+  min-height: 118px;
+  overflow: hidden;
 }
 
 .activity-pill span {
@@ -1169,9 +1167,6 @@ img {
     box-shadow: 0 26px 68px rgba(15, 23, 42, 0.12);
   }
 
-  .activity-marquee {
-    animation: marquee 20s linear infinite;
-  }
 }
 
 @media (max-width: 1024px) {
@@ -1257,7 +1252,7 @@ img {
   }
 
   .activity-marquee {
-    grid-auto-columns: minmax(220px, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .modal-card {

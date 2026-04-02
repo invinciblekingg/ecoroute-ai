@@ -105,8 +105,8 @@ function LiveActivityStrip() {
         <strong>Signals moving through the system right now</strong>
       </div>
       <div className="activity-marquee">
-        {liveActivity.concat(liveActivity).map((item, index) => (
-          <article className="activity-pill" key={`${item.title}-${index}`}>
+        {liveActivity.map((item) => (
+          <article className="activity-pill" key={item.title}>
             <span>{item.time}</span>
             <strong>{item.title}</strong>
             <p>{item.detail}</p>
