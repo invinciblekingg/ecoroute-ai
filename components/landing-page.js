@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import DemoModal from "./demo-modal";
 import Navbar from "./navbar";
-import ReportModal from "./report-modal";
 import {
   dashboardPanels,
   footerLinks,
@@ -75,12 +75,18 @@ function ModuleIcon({ name }) {
     );
   }
 
-  return <span aria-hidden="true">*</span>;
+  return <span aria-hidden="true">Go</span>;
 }
 
 function ModuleCard({ module }) {
   return (
-    <article className="module-card module-card-new" data-pop data-hover-card>
+    <Link
+      className="module-card module-card-new module-card-link"
+      href={`/platform/${module.id}`}
+      aria-label={`Open ${module.name}`}
+      data-pop
+      data-hover-card
+    >
       <div className="module-card-top">
         <div className="module-icon" style={{ background: module.iconBg, color: module.iconColor }}>
           <ModuleIcon name={module.icon} />
@@ -97,7 +103,11 @@ function ModuleCard({ module }) {
           <li key={feature}>{feature}</li>
         ))}
       </ul>
-    </article>
+      <span className="module-card-link-row">
+        <span>Open module</span>
+        <span aria-hidden="true">-&gt;</span>
+      </span>
+    </Link>
   );
 }
 
@@ -146,7 +156,6 @@ function LiveMarquee() {
 
 export default function LandingPage() {
   const [pilotOpen, setPilotOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     const hoverCleanups = [];
@@ -278,7 +287,6 @@ export default function LandingPage() {
     <>
       <Navbar onOpenDemo={() => setPilotOpen(true)} />
       <DemoModal open={pilotOpen} onClose={() => setPilotOpen(false)} />
-      <ReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
 
       <main className="eco-shell landing-page">
         <section className="hero-section hero-showcase" id="overview">
@@ -308,9 +316,9 @@ export default function LandingPage() {
                 reports, the system sorts the noise, and crews move with a clear path from alert to cleanup.
               </p>
               <div className="hero-actions" data-hero-cta>
-                <button type="button" className="primary-button hero-primary" onClick={() => setReportOpen(true)}>
+                <Link className="primary-button hero-primary" href="/platform/smart-reporting">
                   Report waste
-                </button>
+                </Link>
                 <a className="secondary-button hero-secondary" href="#modules">
                   View live modules
                 </a>
@@ -547,3 +555,6 @@ export default function LandingPage() {
     </>
   );
 }
+
+
+

@@ -1,13 +1,13 @@
 import "./globals.css";
-import { Anton, Kaushan_Script, Manrope } from "next/font/google";
+import { Bricolage_Grotesque, Kaushan_Script, Plus_Jakarta_Sans } from "next/font/google";
 
-const manrope = Manrope({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",
 });
 
-const anton = Anton({
+const bricolageGrotesque = Bricolage_Grotesque({
   subsets: ["latin"],
   variable: "--font-display",
   weight: "400",
@@ -30,7 +30,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${anton.variable} ${kaushanScript.variable}`}>{children}</body>
+      <body className={`${plusJakartaSans.variable} ${bricolageGrotesque.variable} ${kaushanScript.variable}`}>{children}</body>
     </html>
   );
 }
