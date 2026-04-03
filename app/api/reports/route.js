@@ -1,8 +1,6 @@
-import { randomUUID } from "crypto";
-import path from "path";
-import { mkdir, writeFile } from "fs/promises";
 import { z } from "zod";
 import { createReport, getDashboardData, listReports } from "../../../lib/ecoroute-store";
+import { saveUploadAsset } from "../../../lib/ecoroute-uploads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,24 +22,6 @@ const schema = z.object({
   source: z.string().trim().optional().default("web"),
 });
 
-async function saveUpload(file) {
-  if (!file || typeof file.arrayBuffer !== "function" || file.size <= 0) {
-    return null;
-  }
-
-  const uploadsDir = path.join(process.cwd(), "public", "uploads", "reports");
-  await mkdir(uploadsDir, { recursive: true });
-
-  const originalName = String(file.name || "proof").replace(/[^a-z0-9._-]+/gi, "-");
-  const extension = path.extname(originalName) || (file.type?.startsWith("video/") ? ".mp4" : ".jpg");
-  const fileName = `${Date.now()}-${randomUUID()}${extension}`;
-  const filePath = path.join(uploadsDir, fileName);
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  await writeFile(filePath, buffer);
-  return `/uploads/reports/${fileName}`;
-}
-
 async function parseBody(request) {
   const contentType = request.headers.get("content-type") || "";
   if (contentType.includes("multipart/form-data")) {
@@ -57,14 +37,14 @@ async function parseBody(request) {
       }
     }
 
-    const proofUrl = await saveUpload(proofFile);
-    if (proofUrl) {
-      payload.proofUrl = proofUrl;
+    const asset = await saveUploadAsset(proofFile);
+    if (asset) {
+      payload.proofUrl = asset.url;
       const type = proofFile?.type || "";
       if (type.startsWith("image/")) {
-        payload.imageUrl = proofUrl;
+        payload.imageUrl = asset.url;
       } else if (type.startsWith("video/")) {
-        payload.videoUrl = proofUrl;
+        payload.videoUrl = asset.url;
       }
     }
 
@@ -95,8 +75,8 @@ export async function POST(request) {
 
   try {
     payload = await parseBody(request);
-  } catch {
-    return Response.json({ ok: false, message: "Invalid request body." }, { status: 400 });
+  } catch (error) {
+    return Response.json({ ok: false, message: error?.message || "Invalid request body." }, { status: 400 });
   }
 
   const result = schema.safeParse(payload);
