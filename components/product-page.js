@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import DemoModal from "./demo-modal";
+import ModuleWorkbench from "./module-workbench";
 import Navbar from "./navbar";
 import Reveal from "./reveal";
 
@@ -160,6 +161,8 @@ export default function ProductPage({ product }) {
             ))}
           </div>
         </section>
+
+        <ModuleWorkbench product={product} />
 
         <section className="section-block">
           <Reveal className="section-heading">
