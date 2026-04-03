@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import AuthModal from "./auth-modal";
 import { readApiJson } from "../lib/client-api";
+import { createCardHover, gsap, prefersReducedMotion, setVisibleState } from "../lib/motion";
 import { navigationProducts } from "../lib/site-data";
 
 function LogoMark() {
@@ -16,12 +17,16 @@ function LogoMark() {
   );
 }
 
-export default function Navbar({ onOpenDemo }) {
+export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
   const navRef = useRef(null);
+  const topbarRef = useRef(null);
+  const menuRef = useRef(null);
+  const drawerInnerRef = useRef(null);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -58,12 +63,103 @@ export default function Navbar({ onOpenDemo }) {
       try {
         const data = await readApiJson("/api/auth/session");
         setCurrentUser(data.authenticated ? data.user : null);
+        setGoogleEnabled(Boolean(data.googleConfigured));
       } catch {
         setCurrentUser(null);
+        setGoogleEnabled(false);
       }
     }
 
     loadSession();
+  }, []);
+
+  useEffect(() => {
+    const bar = topbarRef.current;
+
+    if (!bar) {
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      setVisibleState(bar);
+      return;
+    }
+
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        bar,
+        {
+          opacity: 0,
+          y: -22,
+          scale: 0.98,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.85,
+          ease: "power3.out",
+        }
+      );
+    }, bar);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+
+    if (!menu) {
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      gsap.set(menu, { clearProps: "all" });
+      return;
+    }
+
+    gsap.to(menu, {
+      autoAlpha: menuOpen ? 1 : 0,
+      y: menuOpen ? 0 : -12,
+      duration: menuOpen ? 0.28 : 0.2,
+      ease: menuOpen ? "power3.out" : "power2.inOut",
+      overwrite: true,
+    });
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const drawer = drawerInnerRef.current;
+
+    if (!drawer) {
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      gsap.set(drawer, { clearProps: "all" });
+      return;
+    }
+
+    gsap.to(drawer, {
+      y: mobileOpen ? 0 : -18,
+      opacity: mobileOpen ? 1 : 0,
+      duration: mobileOpen ? 0.34 : 0.22,
+      ease: mobileOpen ? "power3.out" : "power2.inOut",
+      overwrite: true,
+    });
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!navRef.current) {
+      return;
+    }
+
+    return createCardHover(Array.from(navRef.current.querySelectorAll("[data-nav-card]")), {
+      x: 5,
+      y: 5,
+      rotateX: 3,
+      rotateY: 3,
+      scale: 1.01,
+    });
   }, []);
 
   const closeMobile = () => setMobileOpen(false);
@@ -86,6 +182,7 @@ export default function Navbar({ onOpenDemo }) {
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
+        googleEnabled={googleEnabled}
         onAuthSuccess={(user) => {
           setCurrentUser(user);
           closeMobile();
@@ -93,7 +190,7 @@ export default function Navbar({ onOpenDemo }) {
       />
 
       <header className="topbar-shell" ref={navRef}>
-        <div className="topbar">
+        <div className="topbar" ref={topbarRef}>
           <Link className="brand" href="/" onClick={() => setMenuOpen(false)}>
             <span className="brand-mark">
               <LogoMark />
@@ -114,12 +211,13 @@ export default function Navbar({ onOpenDemo }) {
                 <span className="caret">v</span>
               </button>
 
-              <div id="module-menu" className={`platform-menu ${menuOpen ? "open" : ""}`}>
+              <div id="module-menu" ref={menuRef} className={`platform-menu ${menuOpen ? "open" : ""}`}>
                 {navigationProducts.map((product) => (
                   <Link
                     key={product.id}
                     href={`/platform/${product.id}`}
                     className="platform-card"
+                    data-nav-card
                     onClick={() => setMenuOpen(false)}
                   >
                     <strong>{product.name}</strong>
@@ -151,10 +249,6 @@ export default function Navbar({ onOpenDemo }) {
               </span>
             ) : null}
 
-            <a className="ghost-button" href="#pilot">
-              See pilot
-            </a>
-
             {currentUser ? (
               <button type="button" className="ghost-button" onClick={handleLogout}>
                 Log out
@@ -165,9 +259,9 @@ export default function Navbar({ onOpenDemo }) {
               </button>
             )}
 
-            <button type="button" className="primary-button" onClick={onOpenDemo}>
-              Launch pilot
-            </button>
+            <Link className="primary-button" href="/platform/municipality-dashboard">
+              Open dashboard
+            </Link>
 
             <button
               type="button"
@@ -184,7 +278,7 @@ export default function Navbar({ onOpenDemo }) {
         </div>
 
         <div className={`mobile-drawer ${mobileOpen ? "open" : ""}`}>
-          <div className="mobile-drawer-inner">
+          <div className="mobile-drawer-inner" ref={drawerInnerRef}>
             {currentUser ? (
               <div className="mobile-session-card">
                 <strong>{currentUser.name}</strong>
@@ -240,16 +334,9 @@ export default function Navbar({ onOpenDemo }) {
 
             <div className="divider" />
 
-            <button
-              type="button"
-              className="mobile-link button-link"
-              onClick={() => {
-                closeMobile();
-                onOpenDemo();
-              }}
-            >
-              Launch pilot
-            </button>
+            <Link className="mobile-link button-link" href="/platform/municipality-dashboard" onClick={closeMobile}>
+              Open dashboard
+            </Link>
           </div>
         </div>
       </header>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { locationOptions, severityOptions, wasteCategories } from "../lib/ecoroute-domain";
 import { readApiJson } from "../lib/client-api";
+import { createCardHover, gsap, prefersReducedMotion, setVisibleState } from "../lib/motion";
 
 const LIVE_SYNC_INTERVAL_MS = 10000;
 
@@ -47,7 +48,7 @@ function formatShortDate(value) {
 
 function DataCard({ label, value, note }) {
   return (
-    <article className="mini-panel mini-panel-new module-data-card">
+    <article className="mini-panel mini-panel-new module-data-card" data-module-card>
       <span className="eyebrow">{label}</span>
       <strong>{value}</strong>
       {note ? <p>{note}</p> : null}
@@ -80,6 +81,7 @@ async function loadSharedModuleData() {
   const endpoints = {
     admin: "/api/admin/overview?reportsLimit=12&notificationsLimit=12&activityLimit=12",
     dashboard: "/api/dashboard",
+    region: "/api/regions/delhi",
     reports: "/api/reports?limit=12",
     workers: "/api/workers",
     rewards: "/api/rewards",
@@ -93,6 +95,7 @@ async function loadSharedModuleData() {
   const nextState = {
     adminOverview: null,
     dashboard: null,
+    region: null,
     reports: [],
     workers: [],
     leaderboard: [],
@@ -112,6 +115,7 @@ async function loadSharedModuleData() {
     const data = result.value;
     if (key === "admin") nextState.adminOverview = data;
     if (key === "dashboard") nextState.dashboard = data.dashboard ?? data.summary ?? null;
+    if (key === "region") nextState.region = data.region ?? null;
     if (key === "reports") nextState.reports = data.reports ?? [];
     if (key === "workers") nextState.workers = data.workers ?? [];
     if (key === "rewards") nextState.leaderboard = data.leaderboard ?? [];
@@ -123,12 +127,15 @@ async function loadSharedModuleData() {
 }
 
 export default function ModuleWorkbench({ product }) {
+  const rootRef = useRef(null);
   const [reportForm, setReportForm] = useState(defaultReportForm);
   const [rewardForm, setRewardForm] = useState(defaultRewardForm);
   const [workerForm, setWorkerForm] = useState(defaultWorkerForm);
   const [routeForm, setRouteForm] = useState(defaultRouteForm);
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
+  const [region, setRegion] = useState(null);
+  const [zoneOptions, setZoneOptions] = useState(locationOptions);
   const [adminOverview, setAdminOverview] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [reports, setReports] = useState([]);
@@ -141,6 +148,158 @@ export default function ModuleWorkbench({ product }) {
     () => reports.filter((report) => !["resolved", "completed", "duplicate"].includes(report.status)),
     [reports]
   );
+
+  useEffect(() => {
+    const root = rootRef.current;
+
+    if (!root) {
+      return;
+    }
+
+    let hoverCleanup = () => {};
+    const grid = root.querySelector("[data-module-grid]");
+    const ctx = gsap.context(() => {
+      if (prefersReducedMotion()) {
+        setVisibleState(root.querySelectorAll("[data-module-panel], [data-module-card]"));
+        return;
+      }
+
+      gsap.fromTo(
+        "[data-module-heading]",
+        {
+          opacity: 0,
+          y: 24,
+          filter: "blur(8px)",
+        },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 0.85,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: root,
+            start: "top 84%",
+            once: true,
+          },
+        }
+      );
+
+      gsap.fromTo(
+        "[data-module-panel]",
+        {
+          opacity: 0,
+          y: 26,
+          scale: 0.985,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.82,
+          stagger: 0.08,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: grid,
+            start: "top 82%",
+            once: true,
+          },
+        }
+      );
+
+      hoverCleanup = createCardHover(Array.from(root.querySelectorAll("[data-module-card]")), {
+        x: 5,
+        y: 6,
+        rotateX: 3,
+        rotateY: 3,
+        scale: 1.012,
+      });
+    }, root);
+
+    return () => {
+      hoverCleanup();
+      ctx.revert();
+    };
+  }, [product.id]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+
+    if (!root || prefersReducedMotion()) {
+      return;
+    }
+
+    gsap.fromTo(
+      root.querySelectorAll("[data-output-card]"),
+      {
+        opacity: 0,
+        y: 16,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.48,
+        stagger: 0.05,
+        ease: "power2.out",
+        overwrite: true,
+      }
+    );
+  }, [
+    reports.length,
+    workers.length,
+    leaderboard.length,
+    notifications.length,
+    openReports.length,
+    adminOverview?.activity?.length,
+    routePlan?.routeCount,
+  ]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+
+    if (!root || prefersReducedMotion()) {
+      return;
+    }
+
+    gsap.fromTo(
+      root.querySelectorAll("[data-module-metric]"),
+      {
+        opacity: 0.6,
+        y: 12,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.44,
+        stagger: 0.06,
+        ease: "power2.out",
+        overwrite: true,
+      }
+    );
+  }, [reports.length, workers.length, notifications.length]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    const statusNode = root?.querySelector("[data-module-status]");
+
+    if (!statusNode || !message || prefersReducedMotion()) {
+      return;
+    }
+
+    gsap.fromTo(
+      statusNode,
+      {
+        opacity: 0,
+        y: 12,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.42,
+        ease: "power2.out",
+      }
+    );
+  }, [message]);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,6 +321,8 @@ export default function ModuleWorkbench({ product }) {
           return;
         }
 
+        setRegion(nextState.region);
+        setZoneOptions(nextState.region?.reportingZones ?? locationOptions);
         setDashboard(nextState.dashboard);
         setAdminOverview(nextState.adminOverview);
         setReports(nextState.reports);
@@ -181,7 +342,7 @@ export default function ModuleWorkbench({ product }) {
         if (product.id === "smart-reporting") {
           setReportForm((current) => ({
             ...current,
-            locationId: current.locationId || locationOptions[0]?.id || "",
+            locationId: current.locationId || nextState.region?.defaults?.locationId || locationOptions[0]?.id || "",
           }));
         }
 
@@ -220,6 +381,8 @@ export default function ModuleWorkbench({ product }) {
     try {
       const { nextState, errors } = await loadSharedModuleData();
 
+      setRegion(nextState.region);
+      setZoneOptions(nextState.region?.reportingZones ?? locationOptions);
       setDashboard(nextState.dashboard);
       setAdminOverview(nextState.adminOverview);
       setReports(nextState.reports);
@@ -438,18 +601,27 @@ export default function ModuleWorkbench({ product }) {
   }, [product.id, reports, openReports, routePlan, dashboard, workers, leaderboard, adminOverview]);
 
   return (
-    <section className="section-block module-lab" id="live-backend">
-      <div className="section-heading" data-reveal>
+    <section className="section-block module-lab" id="live-backend" ref={rootRef}>
+      <div className="section-heading" data-reveal data-module-heading>
         <span className="eyebrow">Live backend</span>
-        <h2>Everything here talks to the real Next.js API</h2>
+        <h2>Everything here talks to the real Next.js API and Delhi region grid</h2>
         <p>
           Each core module can now submit, optimize, update, or refresh against the backend so the product feels
-          finished instead of mocked.
+          finished instead of mocked. Live zone data is served from the Delhi region API.
         </p>
       </div>
 
-      <div className="module-lab-grid" data-reveal>
-        <div className="module-lab-panel" data-hover-card>
+      {region ? (
+        <div className="module-output-summary" data-module-card data-reveal>
+          <strong>{region.displayName}</strong>
+          <p>
+            {region.coverage?.length ?? 0} live Delhi zones · {region.controlRoom} · {region.responseTargetMinutes} min target
+          </p>
+        </div>
+      ) : null}
+
+      <div className="module-lab-grid" data-reveal data-module-grid>
+        <div className="module-lab-panel" data-hover-card data-module-panel>
           {product.id === "smart-reporting" ? (
             <form className="demo-form" onSubmit={submitReport}>
               <label>
@@ -474,7 +646,7 @@ export default function ModuleWorkbench({ product }) {
                   value={reportForm.locationId}
                   onChange={(event) => setReportForm((current) => ({ ...current, locationId: event.target.value }))}
                 >
-                  {locationOptions.map((option) => (
+                  {zoneOptions.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label} - {option.ward}
                     </option>
@@ -531,7 +703,7 @@ export default function ModuleWorkbench({ product }) {
             <div className="module-action-stack">
               <div className="module-inline-list">
                 {openReports.slice(0, 4).map((report) => (
-                  <article className="module-inline-card" key={report.id}>
+                  <article className="module-inline-card" key={report.id} data-module-card>
                     <strong>{report.title}</strong>
                     <p>
                       {report.category} · severity {report.severity} · {report.status}
@@ -556,7 +728,7 @@ export default function ModuleWorkbench({ product }) {
                 {openReports.slice(0, 6).map((report) => {
                   const checked = routeForm.selected.includes(report.id);
                   return (
-                    <label className="module-select-card" key={report.id}>
+                    <label className="module-select-card" key={report.id} data-module-card>
                       <input
                         type="checkbox"
                         checked={checked}
@@ -695,9 +867,9 @@ export default function ModuleWorkbench({ product }) {
           ) : null}
         </div>
 
-        <aside className="module-lab-aside" data-hover-card>
-          <div className="module-output-shell">
-            <span className="eyebrow">{output.title}</span>
+          <aside className="module-lab-aside" data-hover-card data-module-panel>
+            <div className="module-output-shell">
+              <span className="eyebrow">{output.title}</span>
             {product.id === "route-optimizer" && routePlan ? (
               <div className="module-output-summary">
                 <strong>{routePlan.routeCount} stops</strong>
@@ -719,7 +891,7 @@ export default function ModuleWorkbench({ product }) {
             <div className="module-output-list">
               {Array.isArray(output.body)
                 ? output.body.map((item) => (
-                    <article className="module-output-card" key={item.id ?? item.title ?? item.label}>
+                    <article className="module-output-card" key={item.id ?? item.title ?? item.label} data-output-card data-module-card>
                       <strong>{item.title ?? item.label ?? item.name}</strong>
                       <p>
                         {[item.status, item.category, item.zone ?? item.ward ?? item.role ?? item.currentTask ?? item.points]
@@ -737,13 +909,19 @@ export default function ModuleWorkbench({ product }) {
             </div>
 
             <div className="module-data-grid">
-              <DataCard label="Reports" value={reports.length} note="Live records" />
-              <DataCard label="Workers" value={workers.length} note="Active crews" />
-              <DataCard label="Notifications" value={notifications.length} note="System updates" />
+              <div data-module-metric>
+                <DataCard label="Reports" value={reports.length} note="Live records" />
+              </div>
+              <div data-module-metric>
+                <DataCard label="Workers" value={workers.length} note="Active crews" />
+              </div>
+              <div data-module-metric>
+                <DataCard label="Notifications" value={notifications.length} note="System updates" />
+              </div>
             </div>
           </div>
 
-          {message ? <div className={`form-status ${status === "loading" ? "" : "success"}`}>{message}</div> : null}
+          {message ? <div className={`form-status ${status === "loading" ? "" : "success"}`} data-module-status>{message}</div> : null}
         </aside>
       </div>
     </section>

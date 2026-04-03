@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { gsap, prefersReducedMotion, setVisibleState } from "../lib/motion";
 
-export default function Reveal({ children, className = "", delay = 0 }) {
+export default function Reveal({ children, className = "", delay = 0, distance = 28 }) {
   const ref = useRef(null);
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const element = ref.current;
@@ -13,28 +13,43 @@ export default function Reveal({ children, className = "", delay = 0 }) {
       return;
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-            observer.disconnect();
-          }
-        });
+    if (prefersReducedMotion()) {
+      setVisibleState(element);
+      return;
+    }
+
+    const animation = gsap.fromTo(
+      element,
+      {
+        opacity: 0,
+        y: distance,
+        scale: 0.985,
+        filter: "blur(8px)",
       },
-      { threshold: 0.16, rootMargin: "0px 0px -10% 0px" }
+      {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: "blur(0px)",
+        delay: delay / 1000,
+        duration: 0.95,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: element,
+          start: "top 86%",
+          once: true,
+        },
+      }
     );
 
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      animation.scrollTrigger?.kill();
+      animation.kill();
+    };
+  }, [delay, distance]);
 
   return (
-    <div
-      ref={ref}
-      className={`reveal ${isVisible ? "is-visible" : ""} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
+    <div ref={ref} className={`reveal ${className}`}>
       {children}
     </div>
   );

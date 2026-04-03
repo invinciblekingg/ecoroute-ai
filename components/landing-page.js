@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import DemoModal from "./demo-modal";
 import Navbar from "./navbar";
+import { createCardHover, gsap, ScrollTrigger, prefersReducedMotion, setVisibleState } from "../lib/motion";
 import {
   dashboardPanels,
   footerLinks,
@@ -16,8 +14,6 @@ import {
   testimonials,
   workflowSteps,
 } from "../lib/site-data";
-
-gsap.registerPlugin(ScrollTrigger);
 
 function ModuleIcon({ name }) {
   if (name === "report") {
@@ -123,10 +119,90 @@ function WorkflowCard({ step }) {
 
 function HeroMetric({ item }) {
   return (
-    <article className="hero-metric" data-pop>
+    <article className="hero-metric" data-pop data-hover-card>
       <strong>{item.value}</strong>
       <span>{item.label}</span>
     </article>
+  );
+}
+
+function HeroSignalStrip() {
+  const items = [
+    {
+      label: "Citizen reports",
+      value: "312 today",
+      accent: "#1fbf8d",
+      path: "M4 15c2.8-3.4 5.5-5.1 8.4-5.1 2 0 4 .8 5.8 2.2 1.2 1 1.9 1.8 2.8 3.6",
+    },
+    {
+      label: "AI confidence",
+      value: "0.92 score",
+      accent: "#3b82f6",
+      path: "M5 17l4.2-5 2.8 2.6L18.8 7 21 9.1",
+    },
+    {
+      label: "Cleanup loop",
+      value: "24 crews live",
+      accent: "#ff8b4a",
+      path: "M6 8h9.5L13 5.5M18 16H8.5L11 18.5",
+    },
+  ];
+
+  return (
+    <div className="hero-signal-strip" data-pop>
+      {items.map((item) => (
+        <article className="hero-signal-card" key={item.label} data-pop data-hover-card>
+          <div className="hero-signal-icon" style={{ color: item.accent }} data-signal-icon>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d={item.path} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div>
+            <strong>{item.value}</strong>
+            <span>{item.label}</span>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function StoryIllustration() {
+  return (
+    <div className="story-illustration" aria-hidden="true">
+      <svg viewBox="0 0 520 220" fill="none">
+        <rect x="16" y="18" width="488" height="184" rx="34" fill="url(#storyPanel)" />
+        <path
+          d="M54 144C127 80 178 66 252 90c62 20 94 63 170 50"
+          stroke="#0EA5E9"
+          strokeWidth="14"
+          strokeLinecap="round"
+          data-story-wave
+        />
+        <path
+          d="M80 170C130 126 181 112 236 129c45 14 79 48 126 44"
+          stroke="#22C55E"
+          strokeWidth="10"
+          strokeLinecap="round"
+          data-story-wave
+        />
+        <circle cx="116" cy="101" r="18" fill="#fff" data-story-node />
+        <circle cx="116" cy="101" r="8" fill="#FF8B4A" data-story-node />
+        <circle cx="276" cy="92" r="16" fill="#fff" data-story-node />
+        <circle cx="276" cy="92" r="7" fill="#38BDF8" data-story-node />
+        <circle cx="402" cy="136" r="20" fill="#fff" data-story-node />
+        <circle cx="402" cy="136" r="9" fill="#22C55E" data-story-node />
+        <rect x="64" y="34" width="126" height="36" rx="18" fill="rgba(255,255,255,0.82)" />
+        <rect x="328" y="42" width="108" height="30" rx="15" fill="rgba(255,255,255,0.7)" />
+        <defs>
+          <linearGradient id="storyPanel" x1="34" y1="18" x2="463" y2="202" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#E6F4FF" />
+            <stop offset="0.45" stopColor="#FFFFFF" />
+            <stop offset="1" stopColor="#EAFBEF" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
   );
 }
 
@@ -142,7 +218,7 @@ function LiveMarquee() {
       <div className="live-marquee" aria-label="Live activity feed">
         <div className="live-track" data-marquee-track>
           {items.map((item, index) => (
-            <article className="live-card live-card-new" key={`${item.title}-${index}`} data-hover-card>
+            <article className="live-card live-card-new" key={`${item.title}-${index}`} data-hover-card data-live-card>
               <span>{item.time}</span>
               <strong>{item.title}</strong>
               <p>{item.detail}</p>
@@ -155,25 +231,89 @@ function LiveMarquee() {
 }
 
 export default function LandingPage() {
-  const [pilotOpen, setPilotOpen] = useState(false);
+  const rootRef = useRef(null);
 
   useEffect(() => {
-    const hoverCleanups = [];
+    const root = rootRef.current;
+
+    if (!root) {
+      return;
+    }
+
+    let hoverCleanup = () => {};
+    const mm = gsap.matchMedia();
     const ctx = gsap.context(() => {
+      if (prefersReducedMotion()) {
+        setVisibleState(
+          root.querySelectorAll(
+            "[data-hero-kicker], [data-hero-title] span, [data-hero-copy], [data-hero-cta], [data-hero-chip], [data-hero-panel], [data-reveal], [data-pop]"
+          )
+        );
+        return;
+      }
+
       const timeline = gsap.timeline({ defaults: { ease: "power4.out" } });
 
       timeline
         .from("[data-hero-kicker]", { y: 18, opacity: 0, duration: 0.6 })
-        .from("[data-hero-title] span", {
-          yPercent: 120,
-          opacity: 0,
-          stagger: 0.08,
-          duration: 1,
-        }, "-=0.15")
+        .from(
+          "[data-hero-title] span",
+          {
+            yPercent: 120,
+            opacity: 0,
+            stagger: 0.08,
+            duration: 1,
+          },
+          "-=0.15"
+        )
         .from("[data-hero-copy]", { y: 24, opacity: 0, duration: 0.75 }, "-=0.45")
         .from("[data-hero-cta]", { y: 18, opacity: 0, duration: 0.7 }, "-=0.35")
-        .from("[data-hero-chip]", { y: 14, opacity: 0, stagger: 0.08, duration: 0.5 }, "-=0.35")
-        .from("[data-hero-panel]", { x: 28, opacity: 0, duration: 0.9 }, "-=0.75");
+        .from("[data-hero-chip] span", { y: 14, opacity: 0, stagger: 0.08, duration: 0.5 }, "-=0.35")
+        .from("[data-hero-panel]", { x: 28, opacity: 0, duration: 0.9 }, "-=0.75")
+        .from("[data-signal-icon]", { rotate: -18, scale: 0.85, stagger: 0.08, duration: 0.45 }, "-=0.45");
+
+      gsap.set("[data-reveal]", { y: 42, opacity: 0 });
+      gsap.set("[data-pop]", { y: 26, opacity: 0, scale: 0.96 });
+
+      ScrollTrigger.batch("[data-reveal]", {
+        start: "top 84%",
+        once: true,
+        onEnter: (batch) =>
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            duration: 0.9,
+            stagger: 0.12,
+            ease: "power3.out",
+            overwrite: true,
+          }),
+      });
+
+      ScrollTrigger.batch("[data-pop]", {
+        start: "top 86%",
+        once: true,
+        onEnter: (batch) =>
+          gsap.to(batch, {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.08,
+            ease: "back.out(1.28)",
+            overwrite: true,
+          }),
+      });
+
+      gsap.to("[data-hero-orb]", {
+        x: 18,
+        y: -20,
+        scale: 1.06,
+        duration: 9,
+        repeat: -1,
+        yoyo: true,
+        stagger: 0.9,
+        ease: "sine.inOut",
+      });
 
       gsap.to("[data-cloud]", {
         x: 28,
@@ -226,81 +366,132 @@ export default function LandingPage() {
         ease: "none",
       });
 
-      gsap.utils.toArray("[data-reveal]").forEach((el) => {
-        gsap.fromTo(
-          el,
-          { y: 42, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.9,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 84%",
-            },
-          }
-        );
+      gsap.to("[data-live-card]", {
+        y: -10,
+        rotate: 0.6,
+        duration: 2.8,
+        repeat: -1,
+        yoyo: true,
+        stagger: {
+          each: 0.12,
+          from: "random",
+        },
+        ease: "sine.inOut",
       });
 
-      gsap.utils.toArray("[data-pop]").forEach((el, index) => {
-        gsap.fromTo(
-          el,
-          { y: 26, opacity: 0, scale: 0.96 },
-          {
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            duration: 0.8,
-            delay: index * 0.04,
-            ease: "back.out(1.35)",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 86%",
-            },
-          }
-        );
+      gsap.to("[data-story-node]", {
+        scale: 1.06,
+        transformOrigin: "center center",
+        duration: 2.2,
+        repeat: -1,
+        yoyo: true,
+        stagger: 0.12,
+        ease: "sine.inOut",
       });
 
-      const hoverables = gsap.utils.toArray("[data-hover-card]");
+      gsap.utils.toArray("[data-story-wave]").forEach((line, index) => {
+        const length = line.getTotalLength();
 
-      hoverables.forEach((el) => {
-        const onEnter = () => gsap.to(el, { y: -10, scale: 1.015, duration: 0.28, ease: "power2.out" });
-        const onLeave = () => gsap.to(el, { y: 0, scale: 1, duration: 0.32, ease: "power2.out" });
+        gsap.set(line, {
+          strokeDasharray: length,
+          strokeDashoffset: length,
+        });
 
-        el.addEventListener("mouseenter", onEnter);
-        el.addEventListener("mouseleave", onLeave);
-        hoverCleanups.push(() => {
-          el.removeEventListener("mouseenter", onEnter);
-          el.removeEventListener("mouseleave", onLeave);
+        gsap.to(line, {
+          strokeDashoffset: 0,
+          duration: 1.15,
+          delay: index * 0.14,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: line.closest(".story-card-large"),
+            start: "top 78%",
+            once: true,
+          },
         });
       });
-    });
+
+      gsap.to("[data-dashboard-marker]", {
+        scale: 1.16,
+        duration: 1.7,
+        repeat: -1,
+        yoyo: true,
+        stagger: 0.22,
+        transformOrigin: "center center",
+        ease: "sine.inOut",
+      });
+
+      gsap.to("[data-route-chip]", {
+        y: -6,
+        duration: 2.3,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
+
+      mm.add("(min-width: 781px)", () => {
+        const heroParallax = gsap.timeline({
+          scrollTrigger: {
+            trigger: ".hero-showcase",
+            start: "top top",
+            end: "bottom top",
+            scrub: 1.1,
+          },
+        });
+
+        heroParallax
+          .to("[data-hero-copy-shell]", { yPercent: -12 }, 0)
+          .to("[data-hero-panel-shell]", { yPercent: 10 }, 0)
+          .to("[data-hero-backdrop-shell]", { yPercent: -8, scale: 1.05 }, 0)
+          .to("[data-hero-chip] span", { yPercent: -18, stagger: 0.04 }, 0)
+          .to("[data-hero-signal-shell]", { yPercent: -6 }, 0);
+
+        gsap.utils.toArray("[data-scroll-parallax]").forEach((element, index) => {
+          gsap.to(element, {
+            yPercent: index % 2 === 0 ? -5 : 5,
+            ease: "none",
+            scrollTrigger: {
+              trigger: element,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 1,
+            },
+          });
+        });
+      });
+
+      hoverCleanup = createCardHover(Array.from(root.querySelectorAll("[data-hover-card]")), {
+        x: 6,
+        y: 8,
+        rotateX: 4,
+        rotateY: 4,
+        scale: 1.014,
+      });
+    }, root);
 
     return () => {
-      hoverCleanups.forEach((fn) => fn());
+      hoverCleanup();
+      mm.revert();
       ctx.revert();
     };
   }, []);
 
   return (
     <>
-      <Navbar onOpenDemo={() => setPilotOpen(true)} />
-      <DemoModal open={pilotOpen} onClose={() => setPilotOpen(false)} />
+      <Navbar />
 
-      <main className="eco-shell landing-page">
+      <main className="eco-shell landing-page" ref={rootRef}>
         <section className="hero-section hero-showcase" id="overview">
-          <div className="hero-backdrop" aria-hidden="true">
-            <span className="hero-orb orb-a" />
-            <span className="hero-orb orb-b" />
-            <span className="hero-orb orb-c" />
+          <div className="hero-backdrop" aria-hidden="true" data-hero-backdrop-shell>
+            <span className="hero-orb orb-a" data-hero-orb />
+            <span className="hero-orb orb-b" data-hero-orb />
+            <span className="hero-orb orb-c" data-hero-orb />
             <span className="hero-cloud cloud-a" data-cloud />
             <span className="hero-cloud cloud-b" data-cloud />
             <span className="hero-cloud cloud-c" data-cloud />
           </div>
 
           <div className="hero-grid hero-grid-showcase">
-            <div className="hero-copy hero-copy-showcase">
+            <div className="hero-copy hero-copy-showcase" data-hero-copy-shell>
               <span className="eyebrow hero-eyebrow" data-hero-kicker>
                 Citizen-powered waste intelligence
               </span>
@@ -312,22 +503,26 @@ export default function LandingPage() {
                 </span>
               </h1>
               <p className="hero-text hero-text-showcase" data-hero-copy>
-                EcoRoute AI turns a messy city problem into a bright, trackable civic experience. Residents drop
-                reports, the system sorts the noise, and crews move with a clear path from alert to cleanup.
+                EcoRoute AI turns Delhi's messy waste problem into a bright, trackable civic experience. Residents
+                drop reports, the system sorts the noise, and crews move with a clear path from alert to cleanup.
               </p>
               <div className="hero-actions" data-hero-cta>
                 <Link className="primary-button hero-primary" href="/platform/smart-reporting">
                   Report waste
                 </Link>
-                <a className="secondary-button hero-secondary" href="#modules">
-                  View live modules
-                </a>
+                <Link className="secondary-button hero-secondary" href="/platform/municipality-dashboard">
+                  Open command center
+                </Link>
               </div>
               <div className="chip-row hero-chip-row" data-hero-chip>
                 <span>Map-first reporting</span>
                 <span>AI triage</span>
                 <span>Route optimization</span>
                 <span>Field crews</span>
+              </div>
+
+              <div data-hero-signal-shell>
+                <HeroSignalStrip />
               </div>
 
               <div className="hero-metric-grid">
@@ -337,11 +532,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hero-panel hero-panel-showcase" data-hero-panel>
+            <div className="hero-panel hero-panel-showcase" data-hero-panel data-hero-panel-shell>
               <div className="hero-sky-stage">
                 <div className="hero-sky-card" data-hover-card>
                   <div className="hero-sky-card-top">
-                    <span className="eyebrow">Live city pulse</span>
+                    <span className="eyebrow">Live Delhi pulse</span>
                     <strong>18 active signals</strong>
                   </div>
                   <div className="hero-artboard">
@@ -402,20 +597,21 @@ export default function LandingPage() {
 
         <section className="section-block">
           <div className="story-strip" data-reveal>
-            <article className="story-card story-card-large" data-pop data-hover-card>
+            <article className="story-card story-card-large" data-pop data-hover-card data-scroll-parallax>
               <span className="eyebrow">Intake</span>
               <h2>Drop a report in seconds from map, camera, or GPS.</h2>
               <p>
                 Citizens can capture proof, tag the waste type, and submit a report that lands in the queue without
                 any manual sorting.
               </p>
+              <StoryIllustration />
             </article>
-            <article className="story-card" data-pop data-hover-card>
+            <article className="story-card" data-pop data-hover-card data-scroll-parallax>
               <span className="eyebrow">AI</span>
               <strong>Classify the waste and raise urgent items first.</strong>
               <p>Hazardous and high-priority reports move ahead automatically.</p>
             </article>
-            <article className="story-card" data-pop data-hover-card>
+            <article className="story-card" data-pop data-hover-card data-scroll-parallax>
               <span className="eyebrow">Dispatch</span>
               <strong>Turn the backlog into a clean route plan.</strong>
               <p>Nearby stops, travel time, and field capacity get balanced in one pass.</p>
@@ -428,7 +624,7 @@ export default function LandingPage() {
             <span className="eyebrow">Core modules</span>
             <h2>Built like a bright control panel, not a boring admin site</h2>
             <p>
-              Each module keeps the city loop visible, with a more editorial visual language and a lot more motion.
+              Each module keeps Delhi's cleanup loop visible, with a more editorial visual language and a lot more motion.
             </p>
           </div>
 
@@ -455,23 +651,23 @@ export default function LandingPage() {
           </div>
 
           <div className="dashboard-shell dashboard-shell-new" data-reveal>
-            <div className="dashboard-map dashboard-map-new" data-hover-card>
+            <div className="dashboard-map dashboard-map-new" data-hover-card data-scroll-parallax>
               <div className="dashboard-map-top">
-                <span className="eyebrow">Live city map</span>
+                <span className="eyebrow">Live Delhi map</span>
                 <strong>Dispatch board</strong>
               </div>
               <div className="dashboard-map-canvas dashboard-map-canvas-new">
                 <div className="dashboard-route dashboard-route-new" />
-                <div className="dashboard-marker urgent" />
-                <div className="dashboard-marker medium" />
-                <div className="dashboard-marker resolved" />
-                <div className="dashboard-route-chip">route A</div>
+                <div className="dashboard-marker urgent" data-dashboard-marker />
+                <div className="dashboard-marker medium" data-dashboard-marker />
+                <div className="dashboard-marker resolved" data-dashboard-marker />
+                <div className="dashboard-route-chip" data-route-chip>route A</div>
               </div>
             </div>
 
             <div className="dashboard-panels">
               {dashboardPanels.map((panel) => (
-                <article className="mini-panel mini-panel-new" key={panel.title} data-pop data-hover-card>
+                <article className="mini-panel mini-panel-new" key={panel.title} data-pop data-hover-card data-scroll-parallax>
                   <strong>{panel.title}</strong>
                   <p>{panel.copy}</p>
                 </article>
@@ -512,19 +708,24 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="pilot" className="section-block">
+        <section className="section-block">
           <div className="cta-banner cta-banner-new" data-reveal>
             <div>
-              <span className="eyebrow">Pilot ready</span>
-              <h3>Make the map the hero, then animate the whole story.</h3>
+              <span className="eyebrow">Get Started</span>
+              <h3>Open the citizen intake or jump straight into the Delhi control room.</h3>
               <p>
-                The landing page now feels much more like a living campaign site. If you like the direction, I can
-                keep pushing the rest of the app to match it.
+                EcoRoute now focuses on the live product experience: reports, triage, dispatch, workers, and public
+                visibility in one flow.
               </p>
             </div>
-            <button type="button" className="primary-button" onClick={() => setPilotOpen(true)}>
-              Request a pilot
-            </button>
+            <div className="cta-actions">
+              <Link className="primary-button" href="/platform/smart-reporting">
+                Submit a report
+              </Link>
+              <Link className="secondary-button" href="/platform/municipality-dashboard">
+                Open dashboard
+              </Link>
+            </div>
           </div>
         </section>
 

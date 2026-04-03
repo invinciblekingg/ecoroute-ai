@@ -6,10 +6,11 @@ EcoRoute AI is a clean, light-theme civic platform for waste reporting, AI triag
 
 - A fresh homepage built from the product design report
 - Routed module pages under `/platform/[slug]`
-- A full Next.js backend for reports, routes, workers, rewards, notifications, and pilots
+- A full Next.js backend for reports, routes, workers, rewards, notifications, and Delhi region data
 - Durable production storage support with Supabase
 - Uploads served through `/api/uploads/[id]`
 - A health check endpoint at `/api/health`
+- A Delhi region endpoint at `/api/regions/delhi`
 
 ## Run locally
 
@@ -39,4 +40,4 @@ Then run the SQL in [supabase/schema.sql](C:/Users/DELL/Documents/Playground/sup
 
 - Local development falls back to file storage automatically if `SUPABASE_URL` or `SUPABASE_SERVICE_ROLE_KEY` is not set.
 - Built-in operator login for demos: `admin@ecoroute.ai` / `Admin@12345`
-- The site uses a light, premium visual style with a map-first hero and civic operations sections.
+- The site uses a light, premium visual style with Delhi-focused civic operations sections and GSAP motion.

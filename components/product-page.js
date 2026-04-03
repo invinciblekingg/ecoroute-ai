@@ -1,11 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import DemoModal from "./demo-modal";
 import ModuleWorkbench from "./module-workbench";
 import Navbar from "./navbar";
 import Reveal from "./reveal";
+import { createCardHover, gsap, prefersReducedMotion, setVisibleState } from "../lib/motion";
 
 function ProductIcon({ name }) {
   if (name === "report") {
@@ -67,39 +67,144 @@ function ProductIcon({ name }) {
 }
 
 export default function ProductPage({ product }) {
-  const [demoOpen, setDemoOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+
+    if (!root) {
+      return;
+    }
+
+    let hoverCleanup = () => {};
+    const mm = gsap.matchMedia();
+    const ctx = gsap.context(() => {
+      if (prefersReducedMotion()) {
+        setVisibleState(root.querySelectorAll("[data-product-intro], [data-product-float], [data-product-orb]"));
+        return;
+      }
+
+      const introTimeline = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      introTimeline
+        .from("[data-product-kicker]", { opacity: 0, y: 18, duration: 0.55 })
+        .from("[data-product-title]", { opacity: 0, y: 26, duration: 0.8 }, "-=0.2")
+        .from("[data-product-copy]", { opacity: 0, y: 22, duration: 0.7 }, "-=0.45")
+        .from("[data-product-cta] > *", { opacity: 0, y: 18, stagger: 0.08, duration: 0.55 }, "-=0.4")
+        .from("[data-product-panel]", { opacity: 0, x: 32, duration: 0.9 }, "-=0.65")
+        .from("[data-product-float]", { opacity: 0, y: 20, stagger: 0.08, duration: 0.6 }, "-=0.45");
+
+      gsap.to("[data-product-orb]", {
+        x: 18,
+        y: -22,
+        scale: 1.05,
+        duration: 8,
+        repeat: -1,
+        yoyo: true,
+        stagger: 0.7,
+        ease: "sine.inOut",
+      });
+
+      gsap.to("[data-product-float]", {
+        y: -10,
+        delay: 0.9,
+        duration: 3.8,
+        repeat: -1,
+        yoyo: true,
+        stagger: 0.22,
+        ease: "sine.inOut",
+      });
+
+      mm.add("(min-width: 781px)", () => {
+        const heroDrift = gsap.timeline({
+          scrollTrigger: {
+            trigger: ".product-hero",
+            start: "top top",
+            end: "bottom top",
+            scrub: 1,
+          },
+        });
+
+        heroDrift
+          .to("[data-product-copy-shell]", { yPercent: -10 }, 0)
+          .to("[data-product-panel-shell]", { yPercent: 8 }, 0)
+          .to("[data-product-orb]", { scale: 1.08, yPercent: -10 }, 0);
+
+        gsap.utils.toArray("[data-product-parallax]").forEach((element, index) => {
+          gsap.to(element, {
+            yPercent: index % 2 === 0 ? -4 : 4,
+            ease: "none",
+            scrollTrigger: {
+              trigger: element,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: 1,
+            },
+          });
+        });
+      });
+
+      mm.add("(hover: hover) and (pointer: fine)", () => {
+        hoverCleanup = createCardHover(Array.from(root.querySelectorAll("[data-product-card]:not([data-product-float])")), {
+          x: 6,
+          y: 8,
+          rotateX: 4,
+          rotateY: 4,
+          scale: 1.014,
+        });
+      });
+    }, root);
+
+    return () => {
+      hoverCleanup();
+      mm.revert();
+      ctx.revert();
+    };
+  }, [product.id]);
 
   return (
     <>
-      <Navbar onOpenDemo={() => setDemoOpen(true)} />
-      <DemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
+      <Navbar />
 
-      <main className="eco-shell product-page">
+      <main className="eco-shell product-page" ref={rootRef}>
         <section className="product-hero">
+          <div className="product-hero-backdrop" aria-hidden="true">
+            <span className="product-hero-orb product-orb-a" data-product-orb />
+            <span className="product-hero-orb product-orb-b" data-product-orb />
+            <span className="product-hero-orb product-orb-c" data-product-orb />
+          </div>
+
           <Reveal className="product-hero-grid">
-            <div>
-              <div className="product-badge" style={{ background: product.iconBg, color: product.iconColor }}>
+            <div data-product-copy-shell>
+              <div
+                className="product-badge"
+                style={{ background: product.iconBg, color: product.iconColor }}
+                data-product-kicker
+                data-product-intro
+              >
                 <span className="product-icon-inline">
                   <ProductIcon name={product.icon} />
                 </span>
                 {product.name}
               </div>
-              <h1>
+              <h1 data-product-title data-product-intro>
                 <span className="accent-text">{product.tagline}</span>
               </h1>
-              <p className="hero-text">{product.heroDesc}</p>
-              <div className="hero-actions">
-                <button type="button" className="primary-button" onClick={() => setDemoOpen(true)}>
-                  Request pilot
-                </button>
+              <p className="hero-text" data-product-copy data-product-intro>
+                {product.heroDesc}
+              </p>
+              <div className="hero-actions" data-product-cta data-product-intro>
+                <a className="primary-button" href="#live-backend">
+                  Open live module
+                </a>
                 <a className="secondary-button" href="#features">
                   View features
                 </a>
               </div>
             </div>
 
-            <div className="hero-panel product-panel">
-              <div className="product-stat-card">
+            <div className="hero-panel product-panel" data-product-panel data-product-intro data-product-panel-shell>
+              <div className="product-stat-card" data-product-card data-product-float>
                 <span className="eyebrow">{product.stat.label}</span>
                 <h2 className="product-value" style={{ backgroundImage: product.gradientCSS }}>
                   {product.stat.value}
@@ -108,7 +213,7 @@ export default function ProductPage({ product }) {
               </div>
               <div className="product-mini-grid">
                 {product.metrics.map((metric) => (
-                  <article key={metric} className="mini-panel">
+                  <article key={metric} className="mini-panel" data-product-card data-product-float>
                     <strong>{metric}</strong>
                     <p>headline metric</p>
                   </article>
@@ -128,7 +233,7 @@ export default function ProductPage({ product }) {
           <div className="module-grid">
             {product.features.map((feature, index) => (
               <Reveal key={feature.name} delay={index * 60}>
-                <article className="module-card">
+                <article className="module-card" data-product-card data-product-parallax>
                   <div className="module-card-top">
                     <div className="module-icon" style={{ background: product.iconBg, color: product.iconColor }}>
                       <ProductIcon name={product.icon} />
@@ -153,7 +258,7 @@ export default function ProductPage({ product }) {
           <div className="workflow-grid">
             {product.personas.map((person, index) => (
               <Reveal key={person.role} delay={index * 60}>
-                <article className="workflow-card">
+                <article className="workflow-card" data-product-card data-product-parallax>
                   <strong>{person.role}</strong>
                   <p>{person.desc}</p>
                 </article>
@@ -173,7 +278,7 @@ export default function ProductPage({ product }) {
           <div className="workflow-grid">
             {product.steps.map((step, index) => (
               <Reveal key={step} delay={index * 60}>
-                <article className="workflow-card">
+                <article className="workflow-card" data-product-card data-product-parallax>
                   <div className="step-num">0{index + 1}</div>
                   <p>{step}</p>
                 </article>
@@ -184,16 +289,16 @@ export default function ProductPage({ product }) {
 
         <section className="section-block">
           <Reveal>
-            <div className="cta-banner">
+            <div className="cta-banner" data-product-card data-product-parallax>
               <div>
-                <span className="eyebrow">Pilot ready</span>
-                <h3>Ready to {product.ctaAction}?</h3>
-                <p>Open the pilot form, then we can adapt the site later into a larger repo if you like the direction.</p>
+                <span className="eyebrow">Go Live</span>
+                <h3>Ready to put {product.name} to work?</h3>
+                <p>Open the live backend panel, test the module flow, and watch it sync with the rest of the suite.</p>
               </div>
               <div className="cta-actions">
-                <button type="button" className="primary-button" onClick={() => setDemoOpen(true)}>
-                  Request pilot
-                </button>
+                <a className="primary-button" href="#live-backend">
+                  Open live workspace
+                </a>
                 <Link className="secondary-button" href="/">
                   Back home
                 </Link>
