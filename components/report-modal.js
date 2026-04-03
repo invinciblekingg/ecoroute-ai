@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { locationOptions, severityOptions, wasteCategories } from "../lib/ecoroute-domain";
+import { readApiJson } from "../lib/client-api";
 
 const initialState = {
   reporterName: "",
@@ -101,19 +102,10 @@ export default function ReportModal({ open, onClose }) {
     }
 
     try {
-      const response = await fetch("/api/reports", {
+      const data = await readApiJson("/api/reports", {
         method: "POST",
         body: payload,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setStatus("error");
-        setMessage(data.message || "Please review the report and try again.");
-        setFieldErrors(data.errors || {});
-        return;
-      }
 
       setStatus("success");
       setMessage(`Report submitted. ${data.report?.title ?? "The case"} is now in the live queue.`);
@@ -124,9 +116,10 @@ export default function ReportModal({ open, onClose }) {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-    } catch {
+    } catch (error) {
       setStatus("error");
-      setMessage("The report service is temporarily unavailable.");
+      setFieldErrors(error?.data?.errors || {});
+      setMessage(error.message || "The report service is temporarily unavailable.");
     }
   }
 

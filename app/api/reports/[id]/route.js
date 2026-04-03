@@ -13,7 +13,8 @@ const schema = z.object({
 });
 
 export async function GET(_request, { params }) {
-  const report = await getReportById(params.id);
+  const { id } = await params;
+  const report = await getReportById(id);
 
   if (!report) {
     return Response.json({ ok: false, message: "Report not found." }, { status: 404 });
@@ -26,6 +27,7 @@ export async function GET(_request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
+  const { id } = await params;
   let payload;
 
   try {
@@ -46,7 +48,7 @@ export async function PATCH(request, { params }) {
     );
   }
 
-  const updated = await updateReport(params.id, result.data);
+  const updated = await updateReport(id, result.data);
   if (!updated) {
     return Response.json({ ok: false, message: "Report not found." }, { status: 404 });
   }

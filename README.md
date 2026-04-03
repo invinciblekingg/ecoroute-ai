@@ -36,4 +36,5 @@ You can copy the template from [.env.example](C:/Users/DELL/Documents/Playground
 ## Notes
 
 - Local development falls back to file storage automatically if `MONGODB_URI` is not set.
+- Built-in operator login for demos: `admin@ecoroute.ai` / `Admin@12345`
 - The site uses a light, premium visual style with a map-first hero and civic operations sections.

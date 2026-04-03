@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { locationOptions, severityOptions, wasteCategories } from "../lib/ecoroute-domain";
+import { readApiJson } from "../lib/client-api";
 
 const defaultReportForm = {
   reporterName: "",
@@ -30,18 +31,6 @@ const defaultRouteForm = {
   selected: [],
 };
 
-async function readJson(url, options = {}) {
-  const response = await fetch(url, {
-    cache: "no-store",
-    ...options,
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
-  }
-  return data;
-}
-
 function formatShortDate(value) {
   if (!value) return "now";
   const date = new Date(value);
@@ -62,6 +51,49 @@ function DataCard({ label, value, note }) {
       {note ? <p>{note}</p> : null}
     </article>
   );
+}
+
+async function loadSharedModuleData() {
+  const endpoints = {
+    dashboard: "/api/dashboard",
+    reports: "/api/reports?limit=12",
+    workers: "/api/workers",
+    rewards: "/api/rewards",
+    route: "/api/routes/optimize",
+    notifications: "/api/notifications",
+  };
+
+  const entries = Object.entries(endpoints);
+  const settled = await Promise.allSettled(entries.map(([, url]) => readApiJson(url)));
+
+  const nextState = {
+    dashboard: null,
+    reports: [],
+    workers: [],
+    leaderboard: [],
+    routePlan: null,
+    notifications: [],
+  };
+  const errors = [];
+
+  settled.forEach((result, index) => {
+    const [key] = entries[index];
+
+    if (result.status === "rejected") {
+      errors.push(`${key}: ${result.reason?.message || "unavailable"}`);
+      return;
+    }
+
+    const data = result.value;
+    if (key === "dashboard") nextState.dashboard = data.dashboard ?? data.summary ?? null;
+    if (key === "reports") nextState.reports = data.reports ?? [];
+    if (key === "workers") nextState.workers = data.workers ?? [];
+    if (key === "rewards") nextState.leaderboard = data.leaderboard ?? [];
+    if (key === "route") nextState.routePlan = data.plan ?? null;
+    if (key === "notifications") nextState.notifications = data.notifications ?? [];
+  });
+
+  return { nextState, errors };
 }
 
 export default function ModuleWorkbench({ product }) {
@@ -91,27 +123,16 @@ export default function ModuleWorkbench({ product }) {
 
     async function loadModuleData() {
       try {
-        const sharedRequests = [
-          readJson("/api/dashboard"),
-          readJson("/api/reports?limit=12"),
-          readJson("/api/workers"),
-          readJson("/api/rewards"),
-          readJson("/api/routes/optimize"),
-          readJson("/api/notifications"),
-        ];
+        const { nextState, errors } = await loadSharedModuleData();
 
-        const [dashboardRes, reportsRes, workersRes, rewardsRes, routeRes, notificationsRes] = await Promise.all(
-          sharedRequests
-        );
+        setDashboard(nextState.dashboard);
+        setReports(nextState.reports);
+        setWorkers(nextState.workers);
+        setLeaderboard(nextState.leaderboard);
+        setRoutePlan(nextState.routePlan);
+        setNotifications(nextState.notifications);
 
-        setDashboard(dashboardRes.dashboard ?? dashboardRes.summary ?? null);
-        setReports(reportsRes.reports ?? []);
-        setWorkers(workersRes.workers ?? []);
-        setLeaderboard(rewardsRes.leaderboard ?? []);
-        setRoutePlan(routeRes.plan ?? null);
-        setNotifications(notificationsRes.notifications ?? []);
-
-        const firstWorker = (workersRes.workers ?? [])[0];
+        const firstWorker = (nextState.workers ?? [])[0];
         if (firstWorker) {
           setWorkerForm((current) => ({
             ...current,
@@ -124,6 +145,9 @@ export default function ModuleWorkbench({ product }) {
             ...current,
             locationId: current.locationId || locationOptions[0]?.id || "",
           }));
+        }
+        if (errors.length) {
+          setMessage(`Some live services are unavailable: ${errors.join(", ")}`);
         }
       } catch (error) {
         setMessage(error.message || "Failed to load live module data.");
@@ -140,22 +164,15 @@ export default function ModuleWorkbench({ product }) {
     setMessage("");
 
     try {
-      const [dashboardRes, reportsRes, workersRes, rewardsRes, routeRes, notificationsRes] = await Promise.all([
-        readJson("/api/dashboard"),
-        readJson("/api/reports?limit=12"),
-        readJson("/api/workers"),
-        readJson("/api/rewards"),
-        readJson("/api/routes/optimize"),
-        readJson("/api/notifications"),
-      ]);
+      const { nextState, errors } = await loadSharedModuleData();
 
-      setDashboard(dashboardRes.dashboard ?? dashboardRes.summary ?? null);
-      setReports(reportsRes.reports ?? []);
-      setWorkers(workersRes.workers ?? []);
-      setLeaderboard(rewardsRes.leaderboard ?? []);
-      setRoutePlan(routeRes.plan ?? null);
-      setNotifications(notificationsRes.notifications ?? []);
-      setMessage("Live backend refreshed successfully.");
+      setDashboard(nextState.dashboard);
+      setReports(nextState.reports);
+      setWorkers(nextState.workers);
+      setLeaderboard(nextState.leaderboard);
+      setRoutePlan(nextState.routePlan);
+      setNotifications(nextState.notifications);
+      setMessage(errors.length ? `Partial refresh complete: ${errors.join(", ")}` : "Live backend refreshed successfully.");
     } catch (error) {
       setMessage(error.message || "Could not refresh live data.");
     } finally {
@@ -169,7 +186,7 @@ export default function ModuleWorkbench({ product }) {
     setMessage("");
 
     try {
-      const data = await readJson("/api/reports", {
+      const data = await readApiJson("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -197,7 +214,7 @@ export default function ModuleWorkbench({ product }) {
 
     try {
       const selectedIds = routeForm.selected.length ? routeForm.selected : openReports.slice(0, 4).map((item) => item.id);
-      const data = await readJson("/api/routes/optimize", {
+      const data = await readApiJson("/api/routes/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reportIds: selectedIds, name: `${product.name} route` }),
@@ -223,7 +240,7 @@ export default function ModuleWorkbench({ product }) {
         throw new Error("Select a worker first.");
       }
 
-      const data = await readJson(`/api/workers/${workerForm.workerId}`, {
+      const data = await readApiJson(`/api/workers/${workerForm.workerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -247,7 +264,7 @@ export default function ModuleWorkbench({ product }) {
     setMessage("");
 
     try {
-      const data = await readJson("/api/rewards", {
+      const data = await readApiJson("/api/rewards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -278,7 +295,7 @@ export default function ModuleWorkbench({ product }) {
     setStatus("loading");
     setMessage("");
     try {
-      await readJson("/api/notifications", {
+      await readApiJson("/api/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ read: true }),

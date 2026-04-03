@@ -4,13 +4,11 @@ import { useEffect, useState } from "react";
 import { readApiJson } from "../lib/client-api";
 
 const initialState = {
-  name: "",
-  email: "",
-  company: "",
-  goal: "",
+  email: "admin@ecoroute.ai",
+  password: "Admin@12345",
 };
 
-export default function DemoModal({ open, onClose }) {
+export default function AuthModal({ open, onClose, onAuthSuccess }) {
   const [form, setForm] = useState(initialState);
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
@@ -21,7 +19,6 @@ export default function DemoModal({ open, onClose }) {
       setStatus("idle");
       setMessage("");
       setFieldErrors({});
-      setForm(initialState);
     }
   }, [open]);
 
@@ -43,19 +40,20 @@ export default function DemoModal({ open, onClose }) {
     setFieldErrors({});
 
     try {
-      const data = await readApiJson("/api/pilots", {
+      const data = await readApiJson("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
 
       setStatus("success");
-      setMessage("Pilot request sent. We saved your details and will follow up shortly.");
-      setForm(initialState);
+      setMessage(`Welcome back, ${data.user?.name ?? "operator"}.`);
+      onAuthSuccess?.(data.user ?? null);
+      onClose();
     } catch (error) {
       setStatus("error");
       setFieldErrors(error?.data?.errors || {});
-      setMessage(error.message || "The pilot request service is temporarily unavailable.");
+      setMessage(error.message || "Login is temporarily unavailable.");
     }
   }
 
@@ -64,71 +62,53 @@ export default function DemoModal({ open, onClose }) {
   }
 
   return (
-    <div className="modal-shell" role="dialog" aria-modal="true" aria-labelledby="demo-title">
+    <div className="modal-shell" role="dialog" aria-modal="true" aria-labelledby="auth-title">
       <button type="button" className="modal-backdrop" onClick={onClose} aria-label="Close modal" />
       <div className="modal-card">
         <div className="modal-topline">
-          <span className="eyebrow">Launch a pilot</span>
+          <span className="eyebrow">Sign in</span>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             x
           </button>
         </div>
-        <h2 id="demo-title">See EcoRoute AI in action</h2>
-        <p>
-          Send a pilot request and we will save it through the Next.js backend so the form works end to end.
-        </p>
+        <h2 id="auth-title">Operator access</h2>
+        <p>Use the built-in operator account or your own seeded credentials to access the live platform.</p>
 
         <form className="demo-form" onSubmit={handleSubmit}>
           <label>
-            <span>Your name</span>
-            <input
-              value={form.name}
-              onChange={(event) => setForm((value) => ({ ...value, name: event.target.value }))}
-              autoComplete="name"
-            />
-            {fieldErrors.name ? <small>{fieldErrors.name[0]}</small> : null}
-          </label>
-
-          <label>
             <span>Email</span>
             <input
-              value={form.email}
-              onChange={(event) => setForm((value) => ({ ...value, email: event.target.value }))}
-              autoComplete="email"
               type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
             />
             {fieldErrors.email ? <small>{fieldErrors.email[0]}</small> : null}
           </label>
 
           <label>
-            <span>City / organization</span>
+            <span>Password</span>
             <input
-              value={form.company}
-              onChange={(event) => setForm((value) => ({ ...value, company: event.target.value }))}
-              autoComplete="organization"
+              type="password"
+              autoComplete="current-password"
+              value={form.password}
+              onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
             />
-            {fieldErrors.company ? <small>{fieldErrors.company[0]}</small> : null}
+            {fieldErrors.password ? <small>{fieldErrors.password[0]}</small> : null}
           </label>
 
-          <label className="full-width">
-            <span>What do you want to improve?</span>
-            <textarea
-              rows="4"
-              value={form.goal}
-              onChange={(event) => setForm((value) => ({ ...value, goal: event.target.value }))}
-              placeholder="Reduce backlog, optimize routes, improve reporting, or build a pilot demo."
-            />
-            {fieldErrors.goal ? <small>{fieldErrors.goal[0]}</small> : null}
-          </label>
+          <div className="auth-hint">
+            Demo login: <strong>admin@ecoroute.ai</strong> / <strong>Admin@12345</strong>
+          </div>
 
-          {message ? <div className={`form-status ${status}`}>{message}</div> : null}
+          {message ? <div className={`form-status ${status === "success" ? "success" : "error"}`}>{message}</div> : null}
 
           <div className="modal-actions">
             <button type="button" className="ghost-button" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="primary-button" disabled={status === "loading"}>
-              {status === "loading" ? "Sending..." : "Request pilot"}
+              {status === "loading" ? "Signing in..." : "Sign in"}
             </button>
           </div>
         </form>

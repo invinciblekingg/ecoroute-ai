@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import AuthModal from "./auth-modal";
+import { readApiJson } from "../lib/client-api";
 import { navigationProducts } from "../lib/site-data";
 
 function LogoMark() {
@@ -17,6 +19,8 @@ function LogoMark() {
 export default function Navbar({ onOpenDemo }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const navRef = useRef(null);
 
   useEffect(() => {
@@ -49,124 +53,206 @@ export default function Navbar({ onOpenDemo }) {
     };
   }, [mobileOpen]);
 
+  useEffect(() => {
+    async function loadSession() {
+      try {
+        const data = await readApiJson("/api/auth/session");
+        setCurrentUser(data.authenticated ? data.user : null);
+      } catch {
+        setCurrentUser(null);
+      }
+    }
+
+    loadSession();
+  }, []);
+
   const closeMobile = () => setMobileOpen(false);
 
-  return (
-    <header className="topbar-shell" ref={navRef}>
-      <div className="topbar">
-        <Link className="brand" href="/" onClick={() => setMenuOpen(false)}>
-          <span className="brand-mark">
-            <LogoMark />
-          </span>
-          <span>EcoRoute AI</span>
-        </Link>
+  async function handleLogout() {
+    try {
+      await readApiJson("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch {
+      // Keep the UI responsive even if the logout request fails remotely.
+    } finally {
+      setCurrentUser(null);
+      closeMobile();
+    }
+  }
 
-        <nav className="desktop-nav" aria-label="Primary">
-          <div className="platform-trigger-wrap">
-            <button
-              type="button"
-              className={`nav-link ${menuOpen ? "active" : ""}`}
-              onClick={() => setMenuOpen((value) => !value)}
-              aria-expanded={menuOpen}
-              aria-controls="module-menu"
-            >
+  return (
+    <>
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthSuccess={(user) => {
+          setCurrentUser(user);
+          closeMobile();
+        }}
+      />
+
+      <header className="topbar-shell" ref={navRef}>
+        <div className="topbar">
+          <Link className="brand" href="/" onClick={() => setMenuOpen(false)}>
+            <span className="brand-mark">
+              <LogoMark />
+            </span>
+            <span>EcoRoute AI</span>
+          </Link>
+
+          <nav className="desktop-nav" aria-label="Primary">
+            <div className="platform-trigger-wrap">
+              <button
+                type="button"
+                className={`nav-link ${menuOpen ? "active" : ""}`}
+                onClick={() => setMenuOpen((value) => !value)}
+                aria-expanded={menuOpen}
+                aria-controls="module-menu"
+              >
+                Modules
+                <span className="caret">v</span>
+              </button>
+
+              <div id="module-menu" className={`platform-menu ${menuOpen ? "open" : ""}`}>
+                {navigationProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/platform/${product.id}`}
+                    className="platform-card"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <strong>{product.name}</strong>
+                    <span>{product.desc}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <a className="nav-link" href="#overview">
+              Overview
+            </a>
+            <a className="nav-link" href="#modules">
               Modules
-              <span className="caret">v</span>
+            </a>
+            <a className="nav-link" href="#operations">
+              Operations
+            </a>
+            <a className="nav-link" href="#impact">
+              Impact
+            </a>
+          </nav>
+
+          <div className="nav-actions">
+            {currentUser ? (
+              <span className="session-chip">
+                {currentUser.name}
+                <small>{currentUser.role}</small>
+              </span>
+            ) : null}
+
+            <a className="ghost-button" href="#pilot">
+              See pilot
+            </a>
+
+            {currentUser ? (
+              <button type="button" className="ghost-button" onClick={handleLogout}>
+                Log out
+              </button>
+            ) : (
+              <button type="button" className="ghost-button" onClick={() => setAuthOpen(true)}>
+                Login
+              </button>
+            )}
+
+            <button type="button" className="primary-button" onClick={onOpenDemo}>
+              Launch pilot
             </button>
 
-            <div id="module-menu" className={`platform-menu ${menuOpen ? "open" : ""}`}>
-              {navigationProducts.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/platform/${product.id}`}
-                  className="platform-card"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <strong>{product.name}</strong>
-                  <span>{product.desc}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <a className="nav-link" href="#overview">
-            Overview
-          </a>
-          <a className="nav-link" href="#modules">
-            Modules
-          </a>
-          <a className="nav-link" href="#operations">
-            Operations
-          </a>
-          <a className="nav-link" href="#impact">
-            Impact
-          </a>
-        </nav>
-
-        <div className="nav-actions">
-          <a className="ghost-button" href="#pilot">
-            See pilot
-          </a>
-          <button type="button" className="primary-button" onClick={onOpenDemo}>
-            Launch pilot
-          </button>
-          <button
-            type="button"
-            className={`hamburger ${mobileOpen ? "open" : ""}`}
-            onClick={() => setMobileOpen((value) => !value)}
-            aria-expanded={mobileOpen}
-            aria-label="Toggle mobile navigation"
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-        </div>
-      </div>
-
-      <div className={`mobile-drawer ${mobileOpen ? "open" : ""}`}>
-        <div className="mobile-drawer-inner">
-          <div className="mobile-group-title">Modules</div>
-          {navigationProducts.map((product) => (
-            <Link
-              key={product.id}
-              href={`/platform/${product.id}`}
-              className="mobile-link"
-              onClick={closeMobile}
+            <button
+              type="button"
+              className={`hamburger ${mobileOpen ? "open" : ""}`}
+              onClick={() => setMobileOpen((value) => !value)}
+              aria-expanded={mobileOpen}
+              aria-label="Toggle mobile navigation"
             >
-              {product.name}
-            </Link>
-          ))}
-
-          <div className="divider" />
-
-          <a className="mobile-link" href="#overview" onClick={closeMobile}>
-            Overview
-          </a>
-          <a className="mobile-link" href="#modules" onClick={closeMobile}>
-            Modules
-          </a>
-          <a className="mobile-link" href="#operations" onClick={closeMobile}>
-            Operations
-          </a>
-          <a className="mobile-link" href="#impact" onClick={closeMobile}>
-            Impact
-          </a>
-
-          <div className="divider" />
-
-          <button
-            type="button"
-            className="mobile-link button-link"
-            onClick={() => {
-              closeMobile();
-              onOpenDemo();
-            }}
-          >
-            Launch pilot
-          </button>
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+
+        <div className={`mobile-drawer ${mobileOpen ? "open" : ""}`}>
+          <div className="mobile-drawer-inner">
+            {currentUser ? (
+              <div className="mobile-session-card">
+                <strong>{currentUser.name}</strong>
+                <span>{currentUser.role}</span>
+              </div>
+            ) : null}
+
+            <div className="mobile-group-title">Modules</div>
+            {navigationProducts.map((product) => (
+              <Link
+                key={product.id}
+                href={`/platform/${product.id}`}
+                className="mobile-link"
+                onClick={closeMobile}
+              >
+                {product.name}
+              </Link>
+            ))}
+
+            <div className="divider" />
+
+            <a className="mobile-link" href="#overview" onClick={closeMobile}>
+              Overview
+            </a>
+            <a className="mobile-link" href="#modules" onClick={closeMobile}>
+              Modules
+            </a>
+            <a className="mobile-link" href="#operations" onClick={closeMobile}>
+              Operations
+            </a>
+            <a className="mobile-link" href="#impact" onClick={closeMobile}>
+              Impact
+            </a>
+
+            <div className="divider" />
+
+            {currentUser ? (
+              <button type="button" className="mobile-link button-link" onClick={handleLogout}>
+                Log out
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="mobile-link button-link"
+                onClick={() => {
+                  closeMobile();
+                  setAuthOpen(true);
+                }}
+              >
+                Login
+              </button>
+            )}
+
+            <div className="divider" />
+
+            <button
+              type="button"
+              className="mobile-link button-link"
+              onClick={() => {
+                closeMobile();
+                onOpenDemo();
+              }}
+            >
+              Launch pilot
+            </button>
+          </div>
+        </div>
+      </header>
+    </>
   );
 }

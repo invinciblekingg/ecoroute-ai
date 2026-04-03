@@ -242,6 +242,25 @@ img {
   gap: 10px;
 }
 
+.session-chip {
+  display: inline-grid;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-soft);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.session-chip small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
 .ghost-button {
   color: var(--text);
   border: 1px solid var(--line);
@@ -354,6 +373,23 @@ img {
   justify-content: flex-start;
   border-radius: 18px;
   background: rgba(14, 159, 110, 0.05);
+}
+
+.mobile-session-card {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.mobile-session-card span {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
 }
 
 .button-link {
@@ -1875,6 +1911,14 @@ img {
 
 .demo-form small {
   color: #b91c1c;
+}
+
+.auth-hint {
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px dashed rgba(59, 130, 246, 0.18);
+  color: var(--muted);
+  background: rgba(59, 130, 246, 0.06);
 }
 
 .full-width {

@@ -4,7 +4,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(_request, { params }) {
-  const asset = await getUploadAsset(params.id);
+  const { id } = await params;
+  const asset = await getUploadAsset(id);
 
   if (!asset) {
     return Response.json({ ok: false, message: "Upload not found." }, { status: 404 });
@@ -15,7 +16,7 @@ export async function GET(_request, { params }) {
       "Content-Type": asset.contentType || "application/octet-stream",
       "Content-Length": String(asset.size || asset.buffer.length),
       "Cache-Control": "public, max-age=31536000, immutable",
-      "Content-Disposition": `inline; filename="${asset.fileName || `${params.id}.bin`}"`,
+      "Content-Disposition": `inline; filename="${asset.fileName || `${id}.bin`}"`,
     },
   });
 }

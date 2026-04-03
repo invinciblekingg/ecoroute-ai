@@ -14,7 +14,8 @@ const updateSchema = z.object({
 });
 
 export async function GET(_request, { params }) {
-  const worker = await getWorkerById(params.id);
+  const { id } = await params;
+  const worker = await getWorkerById(id);
   if (!worker) {
     return Response.json({ ok: false, message: "Worker not found." }, { status: 404 });
   }
@@ -26,6 +27,7 @@ export async function GET(_request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
+  const { id } = await params;
   let payload;
 
   try {
@@ -50,7 +52,7 @@ export async function PATCH(request, { params }) {
     Object.entries(result.data).filter(([, value]) => value !== "")
   );
 
-  const worker = await updateWorker(params.id, updates);
+  const worker = await updateWorker(id, updates);
   if (!worker) {
     return Response.json({ ok: false, message: "Worker not found." }, { status: 404 });
   }

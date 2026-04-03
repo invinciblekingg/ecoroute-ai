@@ -6,8 +6,9 @@ export function generateStaticParams() {
   return products.map((product) => ({ slug: product.id }));
 }
 
-export default function PlatformPage({ params }) {
-  const product = products.find((item) => item.id === params.slug);
+export default async function PlatformPage({ params }) {
+  const resolvedParams = await params;
+  const product = products.find((item) => item.id === resolvedParams.slug);
 
   if (!product) {
     notFound();
