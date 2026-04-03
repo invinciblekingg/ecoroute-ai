@@ -1,5 +1,5 @@
 import "./globals.css";
-import { Manrope, Space_Grotesk } from "next/font/google";
+import { Anton, Kaushan_Script, Manrope } from "next/font/google";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -7,9 +7,17 @@ const manrope = Manrope({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const anton = Anton({
   subsets: ["latin"],
   variable: "--font-display",
+  weight: "400",
+  display: "swap",
+});
+
+const kaushanScript = Kaushan_Script({
+  subsets: ["latin"],
+  variable: "--font-script",
+  weight: "400",
   display: "swap",
 });
 
@@ -22,7 +30,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${manrope.variable} ${spaceGrotesk.variable}`}>{children}</body>
+      <body className={`${manrope.variable} ${anton.variable} ${kaushanScript.variable}`}>{children}</body>
     </html>
   );
 }
