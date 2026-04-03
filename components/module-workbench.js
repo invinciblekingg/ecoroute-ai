@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { locationOptions, severityOptions, wasteCategories } from "../lib/ecoroute-domain";
 import { readApiJson } from "../lib/client-api";
 
+const LIVE_SYNC_INTERVAL_MS = 10000;
+
 const defaultReportForm = {
   reporterName: "",
   contact: "",
@@ -53,8 +55,30 @@ function DataCard({ label, value, note }) {
   );
 }
 
+function formatApiError(error, fallbackMessage) {
+  const fieldErrors = error?.data?.errors;
+
+  if (fieldErrors && typeof fieldErrors === "object") {
+    const firstMessage = Object.values(fieldErrors)
+      .flat()
+      .find(Boolean);
+
+    if (firstMessage) {
+      return firstMessage;
+    }
+  }
+
+  const storageError = error?.data?.storage?.lastError;
+  if (storageError) {
+    return `${error?.message || fallbackMessage} ${storageError}`;
+  }
+
+  return error?.message || fallbackMessage;
+}
+
 async function loadSharedModuleData() {
   const endpoints = {
+    admin: "/api/admin/overview?reportsLimit=12&notificationsLimit=12&activityLimit=12",
     dashboard: "/api/dashboard",
     reports: "/api/reports?limit=12",
     workers: "/api/workers",
@@ -67,6 +91,7 @@ async function loadSharedModuleData() {
   const settled = await Promise.allSettled(entries.map(([, url]) => readApiJson(url)));
 
   const nextState = {
+    adminOverview: null,
     dashboard: null,
     reports: [],
     workers: [],
@@ -85,6 +110,7 @@ async function loadSharedModuleData() {
     }
 
     const data = result.value;
+    if (key === "admin") nextState.adminOverview = data;
     if (key === "dashboard") nextState.dashboard = data.dashboard ?? data.summary ?? null;
     if (key === "reports") nextState.reports = data.reports ?? [];
     if (key === "workers") nextState.workers = data.workers ?? [];
@@ -103,6 +129,7 @@ export default function ModuleWorkbench({ product }) {
   const [routeForm, setRouteForm] = useState(defaultRouteForm);
   const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("");
+  const [adminOverview, setAdminOverview] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [reports, setReports] = useState([]);
   const [workers, setWorkers] = useState([]);
@@ -116,16 +143,27 @@ export default function ModuleWorkbench({ product }) {
   );
 
   useEffect(() => {
+    let cancelled = false;
+
     setStatus("loading");
     setMessage("");
     setRouteForm(defaultRouteForm);
     setWorkerForm(defaultWorkerForm);
 
-    async function loadModuleData() {
+    async function syncModuleData({ silent = false } = {}) {
+      if (!silent) {
+        setStatus("loading");
+      }
+
       try {
         const { nextState, errors } = await loadSharedModuleData();
 
+        if (cancelled) {
+          return;
+        }
+
         setDashboard(nextState.dashboard);
+        setAdminOverview(nextState.adminOverview);
         setReports(nextState.reports);
         setWorkers(nextState.workers);
         setLeaderboard(nextState.leaderboard);
@@ -146,17 +184,33 @@ export default function ModuleWorkbench({ product }) {
             locationId: current.locationId || locationOptions[0]?.id || "",
           }));
         }
+
         if (errors.length) {
           setMessage(`Some live services are unavailable: ${errors.join(", ")}`);
+        } else if (silent) {
+          setMessage("");
         }
       } catch (error) {
-        setMessage(error.message || "Failed to load live module data.");
+        if (!cancelled) {
+          setMessage(error.message || "Failed to load live module data.");
+        }
       } finally {
-        setStatus("idle");
+        if (!cancelled) {
+          setStatus("idle");
+        }
       }
     }
 
-    loadModuleData();
+    syncModuleData();
+
+    const intervalId = setInterval(() => {
+      syncModuleData({ silent: true });
+    }, LIVE_SYNC_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
   }, [product.id]);
 
   async function refreshDashboard() {
@@ -167,6 +221,7 @@ export default function ModuleWorkbench({ product }) {
       const { nextState, errors } = await loadSharedModuleData();
 
       setDashboard(nextState.dashboard);
+      setAdminOverview(nextState.adminOverview);
       setReports(nextState.reports);
       setWorkers(nextState.workers);
       setLeaderboard(nextState.leaderboard);
@@ -198,10 +253,41 @@ export default function ModuleWorkbench({ product }) {
 
       setReports((current) => [data.report, ...current]);
       setDashboard(data.summary ?? dashboard);
+      setNotifications(data.summary?.notifications ?? notifications);
+      setAdminOverview((current) =>
+        current
+          ? {
+              ...current,
+              dashboard: data.summary ?? current.dashboard,
+              reports: [data.report, ...(current.reports ?? [])].slice(0, 12),
+              activity: [
+                {
+                  id: `${data.report.id}:${data.report.createdAt}:created`,
+                  source: "report",
+                  type: "created",
+                  title: data.report.title,
+                  detail: "Report submitted through the EcoRoute intake flow.",
+                  relatedId: data.report.id,
+                  status: data.report.status,
+                  category: data.report.category,
+                  ward: data.report.ward,
+                  createdAt: data.report.createdAt,
+                },
+                ...(current.activity ?? []),
+              ].slice(0, 12),
+              notifications: data.summary?.notifications ?? current.notifications ?? [],
+              unreadNotifications: (data.summary?.notifications ?? current.notifications ?? []).filter((item) => !item.read)
+                .length,
+            }
+          : current
+      );
       setMessage(`Report created successfully: ${data.report.title}`);
-      setReportForm(defaultReportForm);
+      setReportForm({
+        ...defaultReportForm,
+        locationId: reportForm.locationId || defaultReportForm.locationId,
+      });
     } catch (error) {
-      setMessage(error.message || "Could not submit the report.");
+      setMessage(formatApiError(error, "Could not submit the report."));
     } finally {
       setStatus("idle");
     }
@@ -333,8 +419,8 @@ export default function ModuleWorkbench({ product }) {
 
     if (product.id === "municipality-dashboard") {
       return {
-        title: "Dashboard snapshot",
-        body: dashboard,
+        title: "Live admin feed",
+        body: adminOverview?.activity?.length ? adminOverview.activity : adminOverview?.reports ?? [],
       };
     }
 
@@ -349,7 +435,7 @@ export default function ModuleWorkbench({ product }) {
       title: "Reward table",
       body: leaderboard,
     };
-  }, [product.id, reports, openReports, routePlan, dashboard, workers, leaderboard]);
+  }, [product.id, reports, openReports, routePlan, dashboard, workers, leaderboard, adminOverview]);
 
   return (
     <section className="section-block module-lab" id="live-backend">
@@ -427,7 +513,7 @@ export default function ModuleWorkbench({ product }) {
                   rows="4"
                   value={reportForm.description}
                   onChange={(event) => setReportForm((current) => ({ ...current, description: event.target.value }))}
-                  placeholder="Describe the waste issue"
+                  placeholder="Describe the waste issue in at least 8 characters"
                 />
               </label>
               <div className="modal-actions">

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createReport, getDashboardData, listReports } from "../../../lib/ecoroute-store";
+import { createReport, getDashboardData, getHealthData, listReports } from "../../../lib/ecoroute-store";
 import { saveUploadAsset } from "../../../lib/ecoroute-uploads";
 
 export const runtime = "nodejs";
@@ -55,19 +55,31 @@ async function parseBody(request) {
 }
 
 export async function GET(request) {
-  const url = new URL(request.url);
-  const status = url.searchParams.get("status");
-  const category = url.searchParams.get("category");
-  const limit = url.searchParams.get("limit");
-  const reports = await listReports({ status, category, limit });
-  const dashboard = await getDashboardData();
+  try {
+    const url = new URL(request.url);
+    const status = url.searchParams.get("status");
+    const category = url.searchParams.get("category");
+    const limit = url.searchParams.get("limit");
+    const reports = await listReports({ status, category, limit });
+    const dashboard = await getDashboardData();
 
-  return Response.json({
-    ok: true,
-    count: reports.length,
-    reports,
-    summary: dashboard,
-  });
+    return Response.json({
+      ok: true,
+      count: reports.length,
+      reports,
+      summary: dashboard,
+    });
+  } catch (error) {
+    const health = await getHealthData().catch(() => null);
+    return Response.json(
+      {
+        ok: false,
+        message: error?.message || "Could not load reports.",
+        storage: health?.storage ?? null,
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request) {
@@ -91,16 +103,28 @@ export async function POST(request) {
     );
   }
 
-  const report = await createReport(result.data);
-  const dashboard = await getDashboardData();
+  try {
+    const report = await createReport(result.data);
+    const dashboard = await getDashboardData();
 
-  return Response.json(
-    {
-      ok: true,
-      message: "Waste report created.",
-      report,
-      summary: dashboard,
-    },
-    { status: 201 }
-  );
+    return Response.json(
+      {
+        ok: true,
+        message: "Waste report created.",
+        report,
+        summary: dashboard,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    const health = await getHealthData().catch(() => null);
+    return Response.json(
+      {
+        ok: false,
+        message: error?.message || "Could not create the report.",
+        storage: health?.storage ?? null,
+      },
+      { status: 500 }
+    );
+  }
 }
