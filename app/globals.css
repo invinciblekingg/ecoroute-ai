@@ -1803,6 +1803,7 @@ img {
 .footer-spotlight {
   position: relative;
   margin: -34px auto 0;
+  width: 100%;
   padding: 42px;
   border-radius: 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -2005,9 +2006,10 @@ img {
 .footer-main-surface {
   position: relative;
   z-index: 1;
+  width: 100%;
   display: grid;
   gap: 26px;
-  padding: 32px 28px 18px;
+  padding: 34px 32px 20px;
   border-radius: 34px;
   border: 1px solid rgba(255, 255, 255, 0.7);
   background:
@@ -2094,9 +2096,10 @@ img {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(260px, 1.05fr) minmax(160px, 0.52fr) minmax(260px, 0.95fr) minmax(240px, 0.9fr);
-  gap: 20px;
-  align-items: start;
+  width: 100%;
+  grid-template-columns: minmax(250px, 1.18fr) minmax(180px, 0.72fr) minmax(270px, 1.08fr) minmax(240px, 1fr);
+  gap: 22px;
+  align-items: stretch;
 }
 
 .footer-brand {
@@ -2137,9 +2140,13 @@ img {
 .footer-link-list {
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
 }
 
 .footer-link-list a {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
   padding: 10px 14px;
   color: var(--muted);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -2203,6 +2210,7 @@ img {
 .footer-column-modules,
 .footer-note-card {
   align-self: stretch;
+  width: 100%;
   padding: 20px;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.68);
