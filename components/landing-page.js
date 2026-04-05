@@ -232,6 +232,7 @@ function LiveMarquee() {
 
 export default function LandingPage() {
   const rootRef = useRef(null);
+  const currentYear = new Date().getFullYear();
 
   useEffect(() => {
     const root = rootRef.current;
@@ -708,47 +709,127 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="section-block">
-          <div className="cta-banner cta-banner-new" data-reveal>
-            <div>
-              <span className="eyebrow">Get Started</span>
-              <h3>Open the citizen intake or jump straight into the Delhi control room.</h3>
-              <p>
-                EcoRoute now focuses on the live product experience: reports, triage, dispatch, workers, and public
-                visibility in one flow.
-              </p>
-            </div>
-            <div className="cta-actions">
-              <Link className="primary-button" href="/platform/smart-reporting">
-                Submit a report
-              </Link>
-              <Link className="secondary-button" href="/platform/municipality-dashboard">
-                Open dashboard
-              </Link>
-            </div>
-          </div>
-        </section>
+        <footer id="footer" className="site-footer site-footer-showcase">
+          <div className="footer-shell" data-reveal>
+            <div className="footer-spotlight" data-pop data-hover-card data-scroll-parallax>
+              <div className="footer-spotlight-grid">
+                <div className="footer-spotlight-copy">
+                  <span className="eyebrow">Connected cleanup network</span>
+                  <h3>EcoRoute links every waste report, field crew, and control room decision into one visible loop.</h3>
+                  <p>
+                    Residents report, AI triages the signal, operators dispatch the fastest route, and the public sees
+                    progress instead of silence.
+                  </p>
 
-        <footer id="footer" className="site-footer">
-          <div className="footer-grid">
-            <div>
-              <div className="brand footer-brand">
-                <span className="brand-mark">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 2C8 5 5.5 8.6 5.5 12.2C5.5 17 9 21 12 21C15 21 18.5 17 18.5 12.2C18.5 8.6 16 5 12 2Z" fill="currentColor" />
-                  </svg>
-                </span>
-                <span>EcoRoute AI</span>
+                  <div className="footer-spotlight-actions">
+                    <Link className="primary-button" href="/platform/smart-reporting">
+                      Get started
+                    </Link>
+                    <Link className="footer-video-link" href="/platform/municipality-dashboard">
+                      <span className="footer-video-icon" aria-hidden="true">
+                        ▶
+                      </span>
+                      Watch command flow
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="footer-spotlight-side">
+                  <p className="footer-spotlight-note">
+                    Built around Delhi operations, but designed like a reusable control surface for high-volume civic
+                    cleanup systems.
+                  </p>
+
+                  <div className="footer-spotlight-metrics">
+                    {heroStats.slice(0, 3).map((item) => (
+                      <article className="footer-spotlight-metric" key={item.label}>
+                        <strong>{item.value}</strong>
+                        <span>{item.label}</span>
+                      </article>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <p>Citizen-powered waste management with bright visual storytelling, AI routing, and live transparency.</p>
+
+              <div className="footer-spotlight-pattern footer-spotlight-pattern-left" aria-hidden="true" />
+              <div className="footer-spotlight-pattern footer-spotlight-pattern-right" aria-hidden="true" />
+              <div className="footer-spotlight-line footer-spotlight-line-a" aria-hidden="true" />
+              <div className="footer-spotlight-line footer-spotlight-line-b" aria-hidden="true" />
             </div>
 
-            <div className="footer-links">
-              {footerLinks.map((link) => (
-                <a key={link.label} href={link.href}>
-                  {link.label}
-                </a>
-              ))}
+            <div className="footer-watermark" aria-hidden="true">
+              ECOROUTE
+            </div>
+
+            <div className="footer-grid footer-grid-showcase">
+              <div className="footer-brand-block">
+                <div className="brand footer-brand">
+                  <span className="brand-mark">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 2C8 5 5.5 8.6 5.5 12.2C5.5 17 9 21 12 21C15 21 18.5 17 18.5 12.2C18.5 8.6 16 5 12 2Z" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <span>EcoRoute AI</span>
+                </div>
+                <p>
+                  Citizen-powered waste intelligence for cleaner streets, faster dispatch, and public updates that stay
+                  visible instead of disappearing into a backlog.
+                </p>
+                <div className="footer-pill-row">
+                  <span>Map-first reporting</span>
+                  <span>AI prioritization</span>
+                  <span>Route visibility</span>
+                </div>
+              </div>
+
+              <div className="footer-column">
+                <span className="footer-title">Explore</span>
+                <div className="footer-link-list">
+                  {footerLinks.map((link) => (
+                    <a key={link.label} href={link.href}>
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div className="footer-column">
+                <span className="footer-title">Core Modules</span>
+                <div className="footer-link-list footer-link-list-rich">
+                  {moduleLibrary.slice(0, 4).map((module) => (
+                    <Link key={module.id} href={`/platform/${module.id}`} className="footer-module-link">
+                      <strong>{module.name}</strong>
+                      <span>{module.tagline}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="footer-column footer-note-card">
+                <span className="footer-title">Why it lands</span>
+                <p>
+                  Designed for Delhi today, but structured like a reusable city operations loop that can scale to more
+                  neighborhoods and more crews.
+                </p>
+                <div className="footer-note-list">
+                  <div>
+                    <strong>Public trust</strong>
+                    <span>Residents can see movement from issue to cleanup.</span>
+                  </div>
+                  <div>
+                    <strong>Operator clarity</strong>
+                    <span>Dispatch and field teams work from the same visible signal chain.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="footer-bottom">
+              <p>EcoRoute AI © {currentYear}. Cleaner cities through transparent waste response.</p>
+              <div className="footer-bottom-links">
+                <Link href="/platform/route-optimizer">Route optimizer</Link>
+                <Link href="/platform/worker-panel">Worker panel</Link>
+              </div>
             </div>
           </div>
         </footer>

@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import AuthModal from "./auth-modal";
 import { readApiJson } from "../lib/client-api";
 import { createCardHover, gsap, prefersReducedMotion, setVisibleState } from "../lib/motion";
 import { navigationProducts } from "../lib/site-data";
+
+const desktopNavItems = [
+  { key: "overview", label: "Overview", href: "#overview" },
+  { key: "modules", label: "Modules", href: "#modules" },
+  { key: "operations", label: "Operations", href: "#operations" },
+  { key: "impact", label: "Impact", href: "#impact" },
+];
 
 function LogoMark() {
   return (
@@ -18,15 +26,23 @@ function LogoMark() {
 }
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [currentHash, setCurrentHash] = useState("");
   const navRef = useRef(null);
   const topbarRef = useRef(null);
+  const desktopNavRef = useRef(null);
+  const activePillRef = useRef(null);
   const menuRef = useRef(null);
   const drawerInnerRef = useRef(null);
+
+  const activeDesktopKey = pathname.startsWith("/platform")
+    ? "platform"
+    : desktopNavItems.find((item) => item.href === currentHash)?.key ?? "overview";
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -71,6 +87,19 @@ export default function Navbar() {
     }
 
     loadSession();
+  }, []);
+
+  useEffect(() => {
+    const syncHash = () => {
+      setCurrentHash(window.location.hash || "#overview");
+    };
+
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+
+    return () => {
+      window.removeEventListener("hashchange", syncHash);
+    };
   }, []);
 
   useEffect(() => {
@@ -162,7 +191,88 @@ export default function Navbar() {
     });
   }, []);
 
+  useEffect(() => {
+    const nav = desktopNavRef.current;
+    const pill = activePillRef.current;
+
+    if (!nav || !pill) {
+      return;
+    }
+
+    const renderPill = () => {
+      const pillKey = menuOpen ? "platform" : activeDesktopKey;
+      const target = nav.querySelector(`[data-pill-key="${pillKey}"]`);
+
+      if (!target) {
+        if (prefersReducedMotion()) {
+          gsap.set(pill, { autoAlpha: 0 });
+        } else {
+          gsap.to(pill, {
+            autoAlpha: 0,
+            duration: 0.18,
+            ease: "power2.out",
+            overwrite: true,
+          });
+        }
+        return;
+      }
+
+      const x = target.offsetLeft;
+      const width = target.offsetWidth;
+
+      if (prefersReducedMotion()) {
+        gsap.set(pill, { x, width, autoAlpha: 1 });
+        return;
+      }
+
+      gsap.to(pill, {
+        x,
+        width,
+        autoAlpha: 1,
+        duration: 0.42,
+        ease: "power3.out",
+        overwrite: true,
+      });
+    };
+
+    renderPill();
+    window.addEventListener("resize", renderPill);
+
+    return () => {
+      window.removeEventListener("resize", renderPill);
+    };
+  }, [activeDesktopKey, menuOpen]);
+
   const closeMobile = () => setMobileOpen(false);
+
+  function getSectionHref(hash) {
+    return pathname === "/" ? hash : `/${hash}`;
+  }
+
+  function animateUnderline(target, visible) {
+    const underline = target?.querySelector("[data-nav-underline]");
+
+    if (!underline) {
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      gsap.set(underline, { scaleX: visible ? 1 : 0 });
+      return;
+    }
+
+    gsap.to(underline, {
+      scaleX: visible ? 1 : 0,
+      duration: visible ? 0.3 : 0.24,
+      ease: "power2.out",
+      transformOrigin: visible ? "left center" : "right center",
+      overwrite: true,
+    });
+  }
+
+  function handleDesktopHover(event, visible) {
+    animateUnderline(event.currentTarget, visible);
+  }
 
   async function handleLogout() {
     try {
@@ -198,17 +308,25 @@ export default function Navbar() {
             <span>EcoRoute AI</span>
           </Link>
 
-          <nav className="desktop-nav" aria-label="Primary">
+          <nav className="desktop-nav" aria-label="Primary" ref={desktopNavRef}>
+            <div className="nav-active-pill" ref={activePillRef} aria-hidden="true" />
+
             <div className="platform-trigger-wrap">
               <button
                 type="button"
-                className={`nav-link ${menuOpen ? "active" : ""}`}
+                className={`nav-link ${menuOpen || activeDesktopKey === "platform" ? "active" : ""}`}
+                data-pill-key="platform"
                 onClick={() => setMenuOpen((value) => !value)}
+                onMouseEnter={(event) => handleDesktopHover(event, true)}
+                onMouseLeave={(event) => handleDesktopHover(event, false)}
+                onFocus={(event) => handleDesktopHover(event, true)}
+                onBlur={(event) => handleDesktopHover(event, false)}
                 aria-expanded={menuOpen}
                 aria-controls="module-menu"
               >
-                Modules
+                <span className="nav-link-label">Platform</span>
                 <span className="caret">v</span>
+                <span className="nav-underline" data-nav-underline aria-hidden="true" />
               </button>
 
               <div id="module-menu" ref={menuRef} className={`platform-menu ${menuOpen ? "open" : ""}`}>
@@ -227,18 +345,26 @@ export default function Navbar() {
               </div>
             </div>
 
-            <a className="nav-link" href="#overview">
-              Overview
-            </a>
-            <a className="nav-link" href="#modules">
-              Modules
-            </a>
-            <a className="nav-link" href="#operations">
-              Operations
-            </a>
-            <a className="nav-link" href="#impact">
-              Impact
-            </a>
+            {desktopNavItems.map((item) => (
+              <a
+                key={item.key}
+                className={`nav-link ${activeDesktopKey === item.key ? "active" : ""}`}
+                data-pill-key={item.key}
+                href={getSectionHref(item.href)}
+                aria-current={activeDesktopKey === item.key ? "page" : undefined}
+                onClick={() => {
+                  setMenuOpen(false);
+                  setCurrentHash(item.href);
+                }}
+                onMouseEnter={(event) => handleDesktopHover(event, true)}
+                onMouseLeave={(event) => handleDesktopHover(event, false)}
+                onFocus={(event) => handleDesktopHover(event, true)}
+                onBlur={(event) => handleDesktopHover(event, false)}
+              >
+                <span className="nav-link-label">{item.label}</span>
+                <span className="nav-underline" data-nav-underline aria-hidden="true" />
+              </a>
+            ))}
           </nav>
 
           <div className="nav-actions">
@@ -286,7 +412,7 @@ export default function Navbar() {
               </div>
             ) : null}
 
-            <div className="mobile-group-title">Modules</div>
+            <div className="mobile-group-title">Platform</div>
             {navigationProducts.map((product) => (
               <Link
                 key={product.id}
@@ -300,16 +426,16 @@ export default function Navbar() {
 
             <div className="divider" />
 
-            <a className="mobile-link" href="#overview" onClick={closeMobile}>
+            <a className="mobile-link" href={getSectionHref("#overview")} onClick={closeMobile}>
               Overview
             </a>
-            <a className="mobile-link" href="#modules" onClick={closeMobile}>
+            <a className="mobile-link" href={getSectionHref("#modules")} onClick={closeMobile}>
               Modules
             </a>
-            <a className="mobile-link" href="#operations" onClick={closeMobile}>
+            <a className="mobile-link" href={getSectionHref("#operations")} onClick={closeMobile}>
               Operations
             </a>
-            <a className="mobile-link" href="#impact" onClick={closeMobile}>
+            <a className="mobile-link" href={getSectionHref("#impact")} onClick={closeMobile}>
               Impact
             </a>
 
