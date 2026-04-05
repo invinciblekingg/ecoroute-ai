@@ -1753,7 +1753,7 @@ img {
 .footer-shell {
   position: relative;
   display: grid;
-  gap: 40px;
+  gap: 34px;
   padding: 0 28px 28px;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 38px;
@@ -1802,8 +1802,8 @@ img {
 
 .footer-spotlight {
   position: relative;
-  margin: -34px auto 18px;
-  padding: 34px;
+  margin: -34px auto 0;
+  padding: 42px;
   border-radius: 32px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
@@ -1820,9 +1820,9 @@ img {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-  gap: 28px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1.02fr) minmax(320px, 0.98fr);
+  gap: 44px;
+  align-items: start;
 }
 
 .footer-spotlight-copy,
@@ -1833,16 +1833,16 @@ img {
 
 .footer-spotlight-copy {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .footer-spotlight-copy h3 {
   margin: 0;
-  max-width: 12ch;
+  max-width: 11ch;
   color: #f8fbff;
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(2.05rem, 4vw, 3.65rem);
-  line-height: 0.96;
+  font-size: clamp(2.2rem, 4vw, 4rem);
+  line-height: 0.92;
 }
 
 .footer-spotlight-copy p,
@@ -1856,7 +1856,9 @@ img {
 .footer-spotlight-copy p,
 .footer-spotlight-note {
   margin: 0;
-  max-width: 54ch;
+  max-width: 56ch;
+  font-size: 1rem;
+  line-height: 1.7;
 }
 
 .footer-spotlight .eyebrow {
@@ -1868,7 +1870,7 @@ img {
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  margin-top: 4px;
+  margin-top: 10px;
 }
 
 .footer-video-link {
@@ -1898,12 +1900,12 @@ img {
 
 .footer-spotlight-side {
   display: grid;
-  gap: 18px;
-  justify-items: end;
+  gap: 24px;
+  align-content: space-between;
 }
 
 .footer-spotlight-note {
-  max-width: 34ch;
+  max-width: 36ch;
   text-align: left;
 }
 
@@ -1911,15 +1913,17 @@ img {
   width: 100%;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .footer-spotlight-metric {
-  padding: 16px 14px;
-  border-radius: 18px;
+  min-height: 104px;
+  padding: 18px 16px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .footer-spotlight-metric strong {
@@ -1986,7 +1990,7 @@ img {
 .footer-watermark {
   position: absolute;
   left: 50%;
-  bottom: 126px;
+  bottom: 112px;
   transform: translateX(-50%);
   font-family: var(--font-display), sans-serif;
   font-size: clamp(5.8rem, 18vw, 12rem);
@@ -1996,6 +2000,24 @@ img {
   user-select: none;
   pointer-events: none;
   white-space: nowrap;
+}
+
+.footer-main-surface {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 26px;
+  padding: 32px 28px 18px;
+  border-radius: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(255, 139, 74, 0.08), transparent 22%),
+    rgba(255, 255, 255, 0.76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 18px 44px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(18px);
 }
 
 .footer-banner-copy,
@@ -2072,11 +2094,9 @@ img {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1.15fr 0.7fr 1fr 0.95fr;
-  gap: 18px;
+  grid-template-columns: minmax(260px, 1.05fr) minmax(160px, 0.52fr) minmax(260px, 0.95fr) minmax(240px, 0.9fr);
+  gap: 20px;
   align-items: start;
-  padding-top: 32px;
-  border-top: 1px solid rgba(16, 36, 61, 0.08);
 }
 
 .footer-brand {
@@ -2102,7 +2122,8 @@ img {
   font-weight: 700;
   color: var(--text);
   border: 1px solid rgba(59, 130, 246, 0.12);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
 }
 
 .footer-title {
@@ -2121,8 +2142,8 @@ img {
 .footer-link-list a {
   padding: 10px 14px;
   color: var(--muted);
-  border: 1px solid transparent;
-  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .footer-link-list a:hover,
@@ -2139,11 +2160,11 @@ img {
 
 .footer-module-link {
   width: 100%;
-  max-width: 320px;
-  padding: 14px 16px;
+  max-width: none;
+  padding: 16px 18px;
   border-radius: 20px;
   border: 1px solid rgba(59, 130, 246, 0.08);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.88);
   box-shadow: var(--shadow-soft);
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
@@ -2169,12 +2190,29 @@ img {
 }
 
 .footer-note-card {
-  padding: 18px;
-  border-radius: 24px;
+  padding: 24px 22px;
+  border-radius: 28px;
   border: 1px solid rgba(255, 139, 74, 0.14);
   background:
     radial-gradient(circle at top right, rgba(255, 139, 74, 0.12), transparent 30%),
     rgba(255, 248, 240, 0.92);
+}
+
+.footer-brand-block,
+.footer-column-links,
+.footer-column-modules,
+.footer-note-card {
+  align-self: stretch;
+  padding: 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.footer-column-links,
+.footer-column-modules {
+  align-content: start;
 }
 
 .footer-note-list > div {
@@ -2187,7 +2225,7 @@ img {
   z-index: 1;
   align-items: center;
   justify-content: space-between;
-  padding-top: 20px;
+  padding-top: 24px;
   border-top: 1px solid rgba(16, 36, 61, 0.08);
 }
 
@@ -2779,12 +2817,16 @@ img {
     padding: 22px;
   }
 
+  .footer-main-surface {
+    padding: 24px 22px 16px;
+  }
+
   .footer-spotlight-side {
     justify-items: start;
   }
 
   .footer-watermark {
-    bottom: 154px;
+    bottom: 132px;
     font-size: clamp(5rem, 20vw, 8rem);
   }
 
@@ -2864,6 +2906,10 @@ img {
     padding: 18px;
   }
 
+  .footer-main-surface {
+    padding: 18px 16px 14px;
+  }
+
   .footer-spotlight-grid,
   .footer-grid,
   .footer-stat-grid,
@@ -2880,7 +2926,7 @@ img {
   }
 
   .footer-watermark {
-    bottom: 182px;
+    bottom: 148px;
     font-size: clamp(4rem, 24vw, 6rem);
   }
 

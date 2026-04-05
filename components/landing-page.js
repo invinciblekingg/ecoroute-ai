@@ -761,74 +761,76 @@ export default function LandingPage() {
               ECOROUTE
             </div>
 
-            <div className="footer-grid footer-grid-showcase">
-              <div className="footer-brand-block">
-                <div className="brand footer-brand">
-                  <span className="brand-mark">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 2C8 5 5.5 8.6 5.5 12.2C5.5 17 9 21 12 21C15 21 18.5 17 18.5 12.2C18.5 8.6 16 5 12 2Z" fill="currentColor" />
-                    </svg>
-                  </span>
-                  <span>EcoRoute AI</span>
-                </div>
-                <p>
-                  Citizen-powered waste intelligence for cleaner streets, faster dispatch, and public updates that stay
-                  visible instead of disappearing into a backlog.
-                </p>
-                <div className="footer-pill-row">
-                  <span>Map-first reporting</span>
-                  <span>AI prioritization</span>
-                  <span>Route visibility</span>
-                </div>
-              </div>
-
-              <div className="footer-column">
-                <span className="footer-title">Explore</span>
-                <div className="footer-link-list">
-                  {footerLinks.map((link) => (
-                    <a key={link.label} href={link.href}>
-                      {link.label}
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              <div className="footer-column">
-                <span className="footer-title">Core Modules</span>
-                <div className="footer-link-list footer-link-list-rich">
-                  {moduleLibrary.slice(0, 4).map((module) => (
-                    <Link key={module.id} href={`/platform/${module.id}`} className="footer-module-link">
-                      <strong>{module.name}</strong>
-                      <span>{module.tagline}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div className="footer-column footer-note-card">
-                <span className="footer-title">Why it lands</span>
-                <p>
-                  Designed for Delhi today, but structured like a reusable city operations loop that can scale to more
-                  neighborhoods and more crews.
-                </p>
-                <div className="footer-note-list">
-                  <div>
-                    <strong>Public trust</strong>
-                    <span>Residents can see movement from issue to cleanup.</span>
+            <div className="footer-main-surface">
+              <div className="footer-grid footer-grid-showcase">
+                <div className="footer-brand-block">
+                  <div className="brand footer-brand">
+                    <span className="brand-mark">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2C8 5 5.5 8.6 5.5 12.2C5.5 17 9 21 12 21C15 21 18.5 17 18.5 12.2C18.5 8.6 16 5 12 2Z" fill="currentColor" />
+                      </svg>
+                    </span>
+                    <span>EcoRoute AI</span>
                   </div>
-                  <div>
-                    <strong>Operator clarity</strong>
-                    <span>Dispatch and field teams work from the same visible signal chain.</span>
+                  <p>
+                    Citizen-powered waste intelligence for cleaner streets, faster dispatch, and public updates that stay
+                    visible instead of disappearing into a backlog.
+                  </p>
+                  <div className="footer-pill-row">
+                    <span>Map-first reporting</span>
+                    <span>AI prioritization</span>
+                    <span>Route visibility</span>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="footer-bottom">
-              <p>EcoRoute AI © {currentYear}. Cleaner cities through transparent waste response.</p>
-              <div className="footer-bottom-links">
-                <Link href="/platform/route-optimizer">Route optimizer</Link>
-                <Link href="/platform/worker-panel">Worker panel</Link>
+                <div className="footer-column footer-column-links">
+                  <span className="footer-title">Explore</span>
+                  <div className="footer-link-list">
+                    {footerLinks.map((link) => (
+                      <a key={link.label} href={link.href}>
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="footer-column footer-column-modules">
+                  <span className="footer-title">Core Modules</span>
+                  <div className="footer-link-list footer-link-list-rich">
+                    {moduleLibrary.slice(0, 4).map((module) => (
+                      <Link key={module.id} href={`/platform/${module.id}`} className="footer-module-link">
+                        <strong>{module.name}</strong>
+                        <span>{module.tagline}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="footer-column footer-note-card">
+                  <span className="footer-title">Why it lands</span>
+                  <p>
+                    Designed for Delhi today, but structured like a reusable city operations loop that can scale to more
+                    neighborhoods and more crews.
+                  </p>
+                  <div className="footer-note-list">
+                    <div>
+                      <strong>Public trust</strong>
+                      <span>Residents can see movement from issue to cleanup.</span>
+                    </div>
+                    <div>
+                      <strong>Operator clarity</strong>
+                      <span>Dispatch and field teams work from the same visible signal chain.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="footer-bottom">
+                <p>EcoRoute AI &copy; {currentYear}. Cleaner cities through transparent waste response.</p>
+                <div className="footer-bottom-links">
+                  <Link href="/platform/route-optimizer">Route optimizer</Link>
+                  <Link href="/platform/worker-panel">Worker panel</Link>
+                </div>
               </div>
             </div>
           </div>
