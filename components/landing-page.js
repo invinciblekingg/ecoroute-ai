@@ -800,7 +800,9 @@ export default function LandingPage() {
                     {moduleLibrary.slice(0, 4).map((module) => (
                       <Link key={module.id} href={`/platform/${module.id}`} className="footer-module-link">
                         <strong>{module.name}</strong>
-                        <span>{module.tagline}</span>
+                        <span className="footer-module-arrow" aria-hidden="true">
+                          ↗
+                        </span>
                       </Link>
                     ))}
                   </div>
