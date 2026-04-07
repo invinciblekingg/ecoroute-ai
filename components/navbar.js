@@ -9,10 +9,10 @@ import { createCardHover, gsap, prefersReducedMotion, setVisibleState } from "..
 import { navigationProducts } from "../lib/site-data";
 
 const desktopNavItems = [
-  { key: "overview", label: "Overview", href: "#overview" },
-  { key: "modules", label: "Modules", href: "#modules" },
-  { key: "operations", label: "Operations", href: "#operations" },
-  { key: "impact", label: "Impact", href: "#impact" },
+  { key: "overview", label: "Overview", meta: "Story", href: "#overview" },
+  { key: "modules", label: "Modules", meta: "System", href: "#modules" },
+  { key: "operations", label: "Operations", meta: "Control", href: "#operations" },
+  { key: "impact", label: "Impact", meta: "Proof", href: "#impact" },
 ];
 
 function LogoMark() {
@@ -302,10 +302,16 @@ export default function Navbar() {
       <header className="topbar-shell" ref={navRef}>
         <div className="topbar" ref={topbarRef}>
           <Link className="brand" href="/" onClick={() => setMenuOpen(false)}>
+            <span className="brand-mark-shell" aria-hidden="true">
+              <span className="brand-mark-glow" />
+            </span>
             <span className="brand-mark">
               <LogoMark />
             </span>
-            <span>EcoRoute AI</span>
+            <span className="brand-copy">
+              <strong className="brand-title">EcoRoute AI</strong>
+              <span className="brand-subtitle">Civic waste intelligence</span>
+            </span>
           </Link>
 
           <nav className="desktop-nav" aria-label="Primary" ref={desktopNavRef}>
@@ -324,13 +330,20 @@ export default function Navbar() {
                 aria-expanded={menuOpen}
                 aria-controls="module-menu"
               >
+                <span className="nav-link-meta">Suite</span>
                 <span className="nav-link-label">Platform</span>
                 <span className="caret">v</span>
                 <span className="nav-underline" data-nav-underline aria-hidden="true" />
               </button>
 
               <div id="module-menu" ref={menuRef} className={`platform-menu ${menuOpen ? "open" : ""}`}>
-                {navigationProducts.map((product) => (
+                <div className="platform-menu-intro">
+                  <span className="platform-menu-kicker">System modules</span>
+                  <strong>Build a cleaner-city command stack</strong>
+                  <p>Move from public intake to live dispatch with product surfaces designed to work as one system.</p>
+                </div>
+
+                {navigationProducts.map((product, index) => (
                   <Link
                     key={product.id}
                     href={`/platform/${product.id}`}
@@ -338,8 +351,10 @@ export default function Navbar() {
                     data-nav-card
                     onClick={() => setMenuOpen(false)}
                   >
+                    <span className="platform-card-index">{String(index + 1).padStart(2, "0")}</span>
                     <strong>{product.name}</strong>
                     <span>{product.desc}</span>
+                    <span className="platform-card-cta">Open module</span>
                   </Link>
                 ))}
               </div>
@@ -361,6 +376,7 @@ export default function Navbar() {
                 onFocus={(event) => handleDesktopHover(event, true)}
                 onBlur={(event) => handleDesktopHover(event, false)}
               >
+                <span className="nav-link-meta">{item.meta}</span>
                 <span className="nav-link-label">{item.label}</span>
                 <span className="nav-underline" data-nav-underline aria-hidden="true" />
               </a>
@@ -369,30 +385,33 @@ export default function Navbar() {
 
           <div className="nav-actions">
             {currentUser ? (
-              <span className="session-chip">
+              <span className="session-chip nav-session-chip">
                 {currentUser.name}
                 <small>{currentUser.role}</small>
               </span>
             ) : null}
 
             {currentUser ? (
-              <button type="button" className="ghost-button" onClick={handleLogout}>
+              <button type="button" className="ghost-button nav-ghost-button" onClick={handleLogout}>
                 Log out
               </button>
             ) : (
-              <button type="button" className="ghost-button" onClick={() => setAuthOpen(true)}>
+              <button type="button" className="ghost-button nav-ghost-button" onClick={() => setAuthOpen(true)}>
                 Login
               </button>
             )}
 
-            <Link className="primary-button" href="/platform/municipality-dashboard">
+            <Link className="primary-button nav-primary-button" href="/platform/municipality-dashboard">
               Open dashboard
             </Link>
 
             <button
               type="button"
               className={`hamburger ${mobileOpen ? "open" : ""}`}
-              onClick={() => setMobileOpen((value) => !value)}
+              onClick={() => {
+                setMenuOpen(false);
+                setMobileOpen((value) => !value);
+              }}
               aria-expanded={mobileOpen}
               aria-label="Toggle mobile navigation"
             >
@@ -404,65 +423,85 @@ export default function Navbar() {
         </div>
 
         <div className={`mobile-drawer ${mobileOpen ? "open" : ""}`}>
+          <button type="button" className="mobile-drawer-backdrop" onClick={closeMobile} aria-label="Close mobile navigation" />
           <div className="mobile-drawer-inner" ref={drawerInnerRef}>
+            <div className="mobile-drawer-header">
+              <div className="mobile-brand-lockup">
+                <span className="mobile-brand-mark">
+                  <LogoMark />
+                </span>
+                <div>
+                  <strong>EcoRoute AI</strong>
+                  <span>Command surface for cleaner cities</span>
+                </div>
+              </div>
+
+              <Link className="mobile-header-cta" href="/platform/municipality-dashboard" onClick={closeMobile}>
+                Open dashboard
+              </Link>
+            </div>
+
             {currentUser ? (
               <div className="mobile-session-card">
                 <strong>{currentUser.name}</strong>
                 <span>{currentUser.role}</span>
               </div>
-            ) : null}
-
-            <div className="mobile-group-title">Platform</div>
-            {navigationProducts.map((product) => (
-              <Link
-                key={product.id}
-                href={`/platform/${product.id}`}
-                className="mobile-link"
-                onClick={closeMobile}
-              >
-                {product.name}
-              </Link>
-            ))}
-
-            <div className="divider" />
-
-            <a className="mobile-link" href={getSectionHref("#overview")} onClick={closeMobile}>
-              Overview
-            </a>
-            <a className="mobile-link" href={getSectionHref("#modules")} onClick={closeMobile}>
-              Modules
-            </a>
-            <a className="mobile-link" href={getSectionHref("#operations")} onClick={closeMobile}>
-              Operations
-            </a>
-            <a className="mobile-link" href={getSectionHref("#impact")} onClick={closeMobile}>
-              Impact
-            </a>
-
-            <div className="divider" />
-
-            {currentUser ? (
-              <button type="button" className="mobile-link button-link" onClick={handleLogout}>
-                Log out
-              </button>
             ) : (
-              <button
-                type="button"
-                className="mobile-link button-link"
-                onClick={() => {
-                  closeMobile();
-                  setAuthOpen(true);
-                }}
-              >
-                Login
-              </button>
+              <div className="mobile-guest-card">
+                <strong>Login to manage reports</strong>
+                <span>Access the control room, live routing, and crew workflows from one place.</span>
+              </div>
             )}
 
+            <div className="mobile-section">
+              <div className="mobile-group-title">Platform suite</div>
+              <div className="mobile-link-grid">
+                {navigationProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/platform/${product.id}`}
+                    className="mobile-link mobile-nav-card"
+                    onClick={closeMobile}
+                  >
+                    <strong>{product.name}</strong>
+                    <span>{product.desc}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="mobile-section">
+              <div className="mobile-group-title">Jump to page</div>
+              <div className="mobile-link-grid mobile-link-grid-compact">
+                {desktopNavItems.map((item) => (
+                  <a key={item.key} className="mobile-link mobile-quick-link" href={getSectionHref(item.href)} onClick={closeMobile}>
+                    <span className="mobile-quick-meta">{item.meta}</span>
+                    <strong>{item.label}</strong>
+                  </a>
+                ))}
+              </div>
+            </div>
+
             <div className="divider" />
 
-            <Link className="mobile-link button-link" href="/platform/municipality-dashboard" onClick={closeMobile}>
-              Open dashboard
-            </Link>
+            <div className="mobile-actions-stack">
+              {currentUser ? (
+                <button type="button" className="mobile-link button-link" onClick={handleLogout}>
+                  Log out
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="mobile-link button-link"
+                  onClick={() => {
+                    closeMobile();
+                    setAuthOpen(true);
+                  }}
+                >
+                  Login
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
